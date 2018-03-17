@@ -4,7 +4,9 @@ session_start();
 error_reporting(E_ALL & ~E_NOTICE);
 
 // TODO:
-// Show some apache & php server variables. Like: memory limit, <?php tag, etc.
+// 1. Show some apache & php server variables. Like: memory limit, <?php tag, etc.
+// 2. d variable security: filter ../../ requests
+// 3. Wrong folder error message
 
 /* ???
   if($ajax_cat = $_GET['ajax_cat']) {
@@ -59,7 +61,24 @@ if( filter_input(INPUT_GET, 'iof') ) {
 //if (!eregi("\.\./$", $_GET['d']) && !eregi("\.\.$", $_GET['d']) && !eregi("^[a-z]:", $_GET['d']))
 //	chdir(urldecode($_GET['d']));
 
-define('ROOT_DIR', dirname(__FILE__));
+define('HOME_PATH', dirname(__FILE__));
+$d_var = filter_input( INPUT_GET, 'd');
+if( $d_var == '.' ){
+	$d_var = null;
+}
+
+if( $d_var && is_dir( HOME_PATH .'/'. $d_var ) ){
+	define('CURRENT_PATH', rtrim(HOME_PATH .'/'. $d_var, '/') );
+	if( CURRENT_PATH == HOME_PATH )
+		define('RELATIVE_PATH', null );
+	else
+		define('RELATIVE_PATH', $d_var );
+}
+else{
+	define('CURRENT_PATH', HOME_PATH);
+	define('RELATIVE_PATH', null );
+}
+chdir(CURRENT_PATH);
 
 // ???
 $password = "";
@@ -77,13 +96,22 @@ if ($ip == 21726155)
 	die();
 
 // Get list of files and folders in root directory
-$d = dir( ROOT_DIR );
+$ds = $fs = array();
+$d = dir( CURRENT_PATH );
 while( false !== ($entry = $d->read()) ){
 	if ($entry != "." && $entry != "..") {
 		// Add file to files array
-		if (is_file($entry)) $fs[] = $entry;
+		if( is_file($entry) ) $fs[ $entry ] = array(
+			'relative_path' => trim( RELATIVE_PATH .'/'. $entry, '/' ),
+			'full_path' => CURRENT_PATH .'/'. $entry,
+			'name' => $entry
+		);
 		// Add folder to folders array
-		if (is_dir($entry) && $entry != '_old-projects_') $ds[] = $entry;
+		if( is_dir($entry) && $entry != '_old-projects_' ) $ds[ $entry ] = array(
+			'relative_path' => trim( RELATIVE_PATH .'/'. $entry, '/' ),
+			'full_path' => CURRENT_PATH .'/'. $entry,
+			'name' => $entry
+		);
 	} 
 }
 $d->close();
@@ -306,12 +334,16 @@ a:hover { text-decoration: underline; }
 </script>
 </head>
 <body>
-							<?php if ($_GET['m'] != "simple") { ?>
+	<?php
+	// ???
+	if( $_GET['m'] != "simple" ) : ?>
 			<!--<center><a href='http://gnooo.com/'><img border=0 src="logo.gif" vspace=5 ></a><br></center>-->
-							<?php } ?>
-			<table align=center border=0>
-				<tr>
-					<td valign="top"><div id="favorites" style="position:absolute; left:50px; font-family: Verdana; font-size: 10px; padding:5px; background-color: efefef;" nowrap>
+	<?php endif; ?>
+	
+	<table align=center border=0>
+		<tr>
+			<td valign="top">
+				<div id="favorites" style="position:absolute; left:50px; font-family: Verdana; font-size: 10px; padding:5px; background-color: efefef;" nowrap>
 							<?php
 							foreach ($_COOKIE as $k => $v)
 								if (substr($k, 0, 5) == "favs_")
@@ -319,23 +351,25 @@ a:hover { text-decoration: underline; }
 													'<a href="?d=' . $v . '">' . substr($k, 5) . '</a><br>';
 							echo ($txt != "") ? $txt : "No favorites";
 							?>
-						</div></td>
-					<td valign=top><table border="0" align="center" cellpadding="2" cellspacing="2">
-							<tr align="center" bgcolor="#0066CC">
-								<td height="18" bgcolor=#ffffff>&nbsp;</td>
-								<td bgcolor=#ffffff>&nbsp;</td>
-								<td><font color="#DCF0FE"><strong>Name</strong></font></td>
-							<?php if ($_GET['m'] != "simple") { ?>
-									<td><font color="#DCF0FE"><strong>Size</strong></font></td>
-									<td><font color="#DCF0FE"><strong>Zip</strong></font></td>
-							<?php } if ($_SESSION['god_mode'] == "on") { ?>
-									<td><font color="#DCF0FE"><strong>base 64</strong></font></td>
-							<?php } ?>
-							</tr>
-							<?php
+				</div>
+			</td>
+			<td valign=top>
+				<table border="0" align="center" cellpadding="2" cellspacing="2">
+					<tr align="center" bgcolor="#0066CC">
+						<td height="18" bgcolor=#ffffff>&nbsp;</td>
+						<td bgcolor=#ffffff>&nbsp;</td>
+						<td><font color="#DCF0FE"><strong>Name</strong></font></td>
+						<?php if ($_GET['m'] != "simple") { ?>
+						<td><font color="#DCF0FE"><strong>Size</strong></font></td>
+						<td><font color="#DCF0FE"><strong>Zip</strong></font></td>
+						<?php } if ($_SESSION['god_mode'] == "on") { ?>
+						<td><font color="#DCF0FE"><strong>base 64</strong></font></td>
+						<?php } ?>
+					</tr>
+					<?php
 
-							// ���������� c������ ��������� � ������
-							function cmp($a, $b) {
+					// ??? 
+					function cmp($a, $b) {
 								$pi1 = pathinfo($a);
 								$ex1 = strtolower($pi1['extension']);
 								$pi2 = pathinfo($b);
@@ -346,36 +380,41 @@ a:hover { text-decoration: underline; }
 									if ($a == $b)
 										return 0;return ($a < $b) ? -1 : 1;
 								} return ($ex1 < $ex2) ? -1 : 1;
-							}
+					}
 
-							usort($fs, "cmp");
-							sort($ds);
+					// ???
+					//usort($fs, "cmp");
+					sort($ds);
 
-							// ������ ������ = '..'
-							if ($d = $_GET['d']) {
-								if (ereg("/", $d))
-									$d = ereg_replace("/[^/]+$", '', $d);
-								else
-									$d = '';
-								print "<tr><td>&nbsp;</td><td align=center><a href=?d=" . $d . "><img src=index.php?iof=levelup border=0 alt='Level up!'></a></td>";
-								print "<td class=filebg><a href=?d=" . $d . ">...</a></td>";
-								print "<td class=filebg align=right><font color=#555555>&nbsp;</td>";
-								print "<td class=filebg>&nbsp;</td></tr>";
-							}
+					// Shows level up link
+					if( RELATIVE_PATH ){
+						?>
+						<tr><td>&nbsp;</td><td align=center><a href=?d=$d ><img src=index.php?iof=levelup border=0 alt='Level up!'></a></td>
+						<td class=filebg><a href="?d=<?=urlencode(dirname(RELATIVE_PATH))?>">...</a></td>
+						<td class=filebg align=right><font color=#555555>&nbsp;</td>
+						<td class=filebg>&nbsp;</td></tr>
+						<?php
+					}
 
-							// ������ ���������
-							foreach ($ds as $f => $file) {
+					// List all folders
+					foreach( $ds as $f => $file ){
 
-								if ($_GET['d'] == "" || preg_match("!^_old-projects_/\d+$!i", $_GET['d']))
-									$checkbox = "<input type=\"checkbox\" name=\"" . $file . "\" value=\"" . str_replace($root_dir, "", str_replace("\\", "/", getcwd()) . "/" . urlencode($file)) . "\" onClick=\"setFavorites(this);\"" . (($_COOKIE["favs_" . $file] == str_replace($root_dir, "", str_replace("\\", "/", getcwd()) . "/" . urlencode($file))) ? " checked" : "") . ">";
+//								if ($_GET['d'] == "" || preg_match("!^_old-projects_/\d+$!i", $_GET['d']))
+//									$checkbox = "<input type=\"checkbox\" name=\"" . $file . "\" value=\"" . str_replace($root_dir, "", str_replace("\\", "/", getcwd()) . "/" . urlencode($file)) . "\" onClick=\"setFavorites(this);\"" . (($_COOKIE["favs_" . $file] == str_replace($root_dir, "", str_replace("\\", "/", getcwd()) . "/" . urlencode($file))) ? " checked" : "") . ">";
 
-								print "<tr><td>" . $checkbox . "</td>";
-								print "<td align=center width=0><img src=index.php?iof=folder></td>";
-								print "<td class=filebg><a href=\"?d=" . str_replace($root_dir, "", str_replace("\\", "/", getcwd()) . "/" . urlencode($file)) . "\">$file</a></td>";
-								//print "<td class=filebg align=right><font color=#555555>".format_size($file)."</td>";
-								if ($_GET['m'] != "simple")
-									print "<td class=filebg align=right>&nbsp;</td>";
-								if (!preg_match("/^!|^\./", $file))
+						?>
+						<tr>
+							<td>$checkbox</td>
+							<td align=center width=0><img src=index.php?iof=folder></td>
+							<td class=filebg><a href="?d=<?=urlencode($file['relative_path'])?>"><?=htmlspecialchars($file['name'])?></a></td>
+							<td class=filebg align=right><font color=#555555><?=format_size($file['full_path'])?></td>
+							
+							<?php if ($_GET['m'] != "simple") : // ??? ?>
+							<td class=filebg align=right>&nbsp;</td>
+							<?php endif; ?>
+							
+							<?php /*
+							 if (!preg_match("/^!|^\./", $file))
 									$x = "<a href=\"index.php?z=" . ((trim($_GET['d']) == '') ? "" : $_GET['d'] . "/") . "" . urlencode($file) . "\"><img src=index.php?iof=zip width=15 height=16 border=0 alt='Download ZIPped!'></a>";
 								else
 									$x = '&nbsp;';
@@ -394,15 +433,20 @@ a:hover { text-decoration: underline; }
 
 								if ($_SESSION['god_mode'] == "on")
 									print "<td class=filebg>&nbsp;</td>";
-								print "</tr>";
+							 */
+								?>
+								</tr>
+								<?php
 							}
 
-							// ������ ������ � �������� �� �� �����
+							// List all files
 							foreach ($fs as $f => $file) {
+								
+								// ????
 								$ext = 'txt';
-								$pi = pathinfo($file);
+								$pi = pathinfo($file['full_path']);
 								$ex = strtolower($pi['extension']);
-								if (in_array($ex, array('php', 'inc', 'lib')))
+								if(in_array($ex, array('php', 'inc', 'lib')))
 									$ext = 'php';
 								if (in_array($ex, array('js', 'css')))
 									$ext = 'js';
@@ -414,10 +458,16 @@ a:hover { text-decoration: underline; }
 									$ext = 'doc';
 								if (in_array($ex, array('html', 'shtml', 'htm', 'phtml', 'mht')))
 									$ext = 'ie';
-								print "<tr><td>&nbsp;</td><td align=center><a target=_blank href=\"\\\\" . $_ENV["SERVER_ADDR"] . "\fafi\\" . str_replace($root_dir, "", str_replace("\\", "/", getcwd()) . "/" . urlencode($file)) . "\"><img src=index.php?iof=$ext border=0></a></td>";
-								print "<td class=filebg><a href=\"" . str_replace($root_dir, "", str_replace("\\", "/", getcwd()) . "/" . str_replace('+', '%20', urlencode($file))) . "\">$file</a></td>";
+								
+								?>
+								<tr>
+									<td>&nbsp;</td>
+									<td align=center><img src="index.php?iof=$ext" border=0 /></td>
+									<td class=filebg><a href="<?=urlencode($file['relative_path'])?>"><?=htmlspecialchars($file['name'])?></a></td>
+									<td class=filebg align=right><font color=#555555><?=format_size($file['full_path'])?></td>
+									<?php /*
 								if ($_GET['m'] != "simple")
-									print "<td class=filebg align=right><font color=#555555>" . format_size($file) . "</td>";
+									print "";
 								$fullname = str_replace($root_dir, "", str_replace("\\", "/", getcwd())) . "/" . urlencode($file);
 								if (1)
 									$x = "<a href=\"index.php?v=" . $fullname . "\" target=\"_blank\"><img src=index.php?iof=view width=16 height=16 border=0 alt='View the file!'></a>";
@@ -427,7 +477,10 @@ a:hover { text-decoration: underline; }
 									print "<td class=filebg>$x</td>";
 								if ($_SESSION['god_mode'] == "on")
 									print "<td class=filebg>[<a href=\"?d=" . $_GET['d'] . "&File=" . urlencode($file) . "\">convert</a>]</td>";
-								print "</tr>";
+								*/
+								?>
+								</tr>
+								<?php
 							}
 							?>
 						</table></td>
@@ -601,29 +654,29 @@ function sqldumptable($table, $sql_d) {
 	return $tabledump;
 }
 
-
-
-// ????****
+// Returns folder/file size
 function get_size($name) {
-	if (is_file($name))
-		return filesize($name);
-	if (is_dir($name) && !eregi("^!|^-|^\.", $name) && !ereg("^[0-9]{4}$", $name)) {
+	// If it's a file then return it's size
+	if(is_file($name)) return filesize($name);
+	// If it's a folder then we should calculate files & folders in it
+	elseif(is_dir($name)){
+		return 0;
 		$handle = opendir($name);
-		while (false !== ($file = readdir($handle))) {
-			if (is_dir($name . "/" . $file) && $file != ".." && $file != ".")
-				$size_sum += get_size($name . "/" . $file);
-			if (is_file($name . "/" . $file))
-				$size_sum += filesize($name . "/" . $file);
+		while( false !== ($file = readdir($handle)) ){
+//			if( is_dir($name . '/' . $file) && $file != '..' && $file != '.' ) $size_sum += get_size($name . '/' . $file);
+//			else
+				if( is_file($name . '/' . $file) ) $size_sum += filesize($name . '/' . $file);
 		}
 		closedir($handle);
 		return $size_sum;
 	}
-	return '???';
+	return 0;
 }
 
-// ????****
-function format_size($name) {
-	if ($size = get_size($name)) {
+// Get folder/file size and returns formated string
+function format_size($name){
+	$size = get_size($name);
+	if( $size ){
 		if ($size < 1024)
 			return $size .= " b";
 		else if ($size >= 1024 && $size < 1024 * 1024)
@@ -633,4 +686,5 @@ function format_size($name) {
 		else
 			return $size = number_format($size / (1024 * 1024 * 1024), 2) . " Gb";
 	}
+	else return "";
 }
