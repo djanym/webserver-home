@@ -515,12 +515,12 @@ a:hover { text-decoration: underline; }
 						</table></td>
 					<td valign="top"><div id="box" style="font-family: Verdana; font-size: 10px; position:absolute; border: dotted 1px; padding:10px; background-color: efefef;" nowrap>
 			<?php
-			$d = dir($root_dir . '/__old_projects/' . $ds[sizeof($ds) - 1]);
+//			$d = dir($root_dir . '/__old_projects/' . $ds[sizeof($ds) - 1]);
 			echo "<h3 style='margin-bottom:3px;'>" . $ds[sizeof($ds) - 1] . "</h3>";
-			while (false !== ($file = $d->read())) {
-				if ($file != "." && $file != "..")
-					echo "<a href=\"?d=_old-projects_/" . urlencode($ajax_cat) . "/" . $file . "\">" . $file . "</a><br>";
-			}
+//			while (false !== ($file = $d->read())) {
+//				if ($file != "." && $file != "..")
+//					echo "<a href=\"?d=_old-projects_/" . urlencode($ajax_cat) . "/" . $file . "\">" . $file . "</a><br>";
+//			}
 			?>
 						</div></td>
 				</tr>
@@ -553,7 +553,7 @@ if ($_GET['m'] != "simple") {
 	<?= $_SESSION['god_mode'] ?>
 						</a>] </span> </small>
 				<br>
-				<small> <span style='font-size:10px;font-family:Verdana'>������� IP: <a href="http://83.218.201.35">83.218.201.35</a> </span> </small><br>
+				<small> <span style='font-size:10px;font-family:Verdana'>Public IP: <a href="http://83.218.201.35">83.218.201.35</a> </span> </small><br>
 			</center>
 	<?php
 	if ($_SESSION['god_mode'] == "on") {
