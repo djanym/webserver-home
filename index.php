@@ -493,25 +493,24 @@ a:hover { text-decoration: underline; }
 								<td height="22"><font color="#DCF0FE"><strong>Old</strong></font></td>
 							</tr>
 	<?php
-//        chdir("D:/WEB_SERVER/htdocs/");
-	$d = dir($root_dir . '/__old_projects');
-	$ds = array();
-	if ($d) {
-		while (false !== ($entry = $d->read()))
-			if ($entry != "." && $entry != "..") {
-				if (is_dir("_old-projects_/" . $entry))
-					$ds[] = $entry;
-			}
-		$d->close();
-		arsort($ds);
-	}
+//	$d = dir($root_dir . '/__old_projects');
+//	$ds = array();
+//	if ($d) {
+//		while (false !== ($entry = $d->read()))
+//			if ($entry != "." && $entry != "..") {
+//				if (is_dir("_old-projects_/" . $entry))
+//					$ds[] = $entry;
+//			}
+//		$d->close();
+//		arsort($ds);
+//	}
 
-	foreach ($ds as $f => $file) {
-		print "<tr>";
-		//print "<td align=center><img src=index.php?iof=folder></td>\n";
-		print "<td class=filebg align=center height=20><a onmouseover=\"showBox('" . urlencode($file) . "');\" href=\"?d=_old-projects_/" . urlencode($file) . "\">$file</a></td>\n";
-		print "</tr>\n";
-	}
+//	foreach ($ds as $f => $file) {
+//		print "<tr>";
+//		//print "<td align=center><img src=index.php?iof=folder></td>\n";
+//		print "<td class=filebg align=center height=20><a onmouseover=\"showBox('" . urlencode($file) . "');\" href=\"?d=_old-projects_/" . urlencode($file) . "\">$file</a></td>\n";
+//		print "</tr>\n";
+//	}
 	?>
 						</table></td>
 					<td valign="top"><div id="box" style="font-family: Verdana; font-size: 10px; position:absolute; border: dotted 1px; padding:10px; background-color: efefef;" nowrap>
