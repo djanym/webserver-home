@@ -2,7 +2,6 @@
 
 // TODO: modernize session
 session_start();
-error_reporting(E_ALL & ~E_NOTICE);
 
 // TODO:
 // 1. Show some apache & php server variables. Like: memory limit, <?php tag, etc.
@@ -62,7 +61,7 @@ if( filter_input(INPUT_GET, 'iof') ) {
 //if (!eregi("\.\./$", $_GET['d']) && !eregi("\.\.$", $_GET['d']) && !eregi("^[a-z]:", $_GET['d']))
 //	chdir(urldecode($_GET['d']));
 
-define('HOME_PATH', dirname(__FILE__));
+
 $d_var = filter_input( INPUT_GET, 'd');
 if( $d_var == '.' ){
 	$d_var = null;

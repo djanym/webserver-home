@@ -2,9 +2,10 @@
 
 $app_start_time = microtime(true);
 
-define('APP_VERSION', '1.0.1');
+define('APP_VERSION', '0.1');
 define('ABSPATH', __DIR__);
 
+include ABSPATH . '/config.php';
 include ABSPATH . '/app.php';
 
 // End clock time in seconds.
