@@ -378,7 +378,7 @@ if ( $user_ip === 1921681 || $user_ip === 12700 || $_SESSION['sess'] === 1 ) {
                             <td><font color="#DCF0FE"><strong>Size</strong></font></td>
                             <td><font color="#DCF0FE"><strong>Zip</strong></font></td>
                         <?php }
-                        if ( $_SESSION['god_mode'] == "on" ) { ?>
+                        if ( $fa_mode == "on" ) { ?>
                             <td><font color="#DCF0FE"><strong>base 64</strong></font></td>
                         <?php } ?>
                     </tr>
@@ -455,7 +455,7 @@ if ( $user_ip === 1921681 || $user_ip === 12700 || $_SESSION['sess'] === 1 ) {
 //               	if(!ereg("^!|^\.",$file)) $x = "<a href=\"index.php?z=".urlencode($file)."\"><img src=index.php?iof=db width=16 height=16 border=0 alt='Download ZIPped!'></a>"; else $x='&nbsp;';
 //                if ($view_mode != "simple") print "<td>$x</td>";
 
-								if ($_SESSION['god_mode'] == "on")
+								if ($fa_mode == "on")
 									print "<td class=filebg>&nbsp;</td>";
 							 */
                             ?>
@@ -505,7 +505,7 @@ if ( $user_ip === 1921681 || $user_ip === 12700 || $_SESSION['sess'] === 1 ) {
 									$x = '&nbsp;';
 								if ($view_mode != "simple")
 									print "<td class=filebg>$x</td>";
-								if ($_SESSION['god_mode'] == "on")
+								if ($fa_mode == "on")
 									print "<td class=filebg>[<a href=\"?d=" . $_GET['d'] . "&File=" . urlencode($file) . "\">convert</a>]</td>";
 								*/
                             ?>
@@ -584,13 +584,13 @@ if ( $view_mode != "simple" ) {
     <br>
     <center>
         <small> <span style='font-size:10px;font-family:Verdana'>God mode: [<a href="?d=<?=$_GET['d']?>&GM=<?=$link_mode?>">
-	<?=$_SESSION['god_mode']?>
+	<?=$fa_mode?>
 						</a>] </span> </small>
         <br>
         <small> <span style='font-size:10px;font-family:Verdana'>Public IP: <a href="http://83.218.201.35">83.218.201.35</a> </span> </small><br>
     </center>
     <?php
-    if ( $_SESSION['god_mode'] == "on" ) {
+    if ( $fa_mode == "on" ) {
         ?>
         <center>
             <form action="" method="post" name=form1>
