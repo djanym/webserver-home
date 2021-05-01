@@ -20,17 +20,6 @@ session_start();
   }
  */
 
-/* ???
-if ($_GET['GM'] == "on")
-	$_SESSION['god_mode'] = "on";
-if ($_GET['GM'] == "off")
-	$_SESSION['god_mode'] = "off";
-if (!$_SESSION['god_mode'])
-	$_SESSION['god_mode'] = "off";
-if ($_SESSION['god_mode'] == "off")
-	$link_mode = "on";
-else
-	$link_mode = "off";
 */
 
 // Icons images
@@ -89,7 +78,7 @@ $password = "";
 //}
 
 // Get IP subnet.
-$a = explode( ".", $_SERVER['REMOTE_ADDR'] );
+$a       = explode( ".", $_SERVER['REMOTE_ADDR'] );
 $user_ip = $a[0] . $a[1] . $a[2];
 
 // ???
@@ -127,7 +116,20 @@ asort( $fs );
 asort( $ds );
 
 // Set options.
-$view_mode = $dir = $_POST['m'] ?? ( $_GET['m'] ?? 'simple' );
+$view_mode = $_POST['m'] ?? ( $_GET['m'] ?? 'simple' );
+// Full access mode.
+$fa = $_POST['fa'] ?? ( $_GET['fa'] ?? null );
+if ( $fa === 'on' ) {
+    $fa_mode = true;
+} else {
+    $fa_mode = false;
+}
+// ??? Link type.
+if ( $fa_mode ) {
+    $link_mode = false;
+} else {
+    $link_mode = true;
+}
 
 // If page opened on local server NOT from internet
 if ( $user_ip === 1921681 || $user_ip === 12700 || $_SESSION['sess'] === 1 ) {
@@ -263,8 +265,11 @@ if ( $user_ip === 1921681 || $user_ip === 12700 || $_SESSION['sess'] === 1 ) {
 
         <style type="text/css">
             td { font-family: Verdana, Arial, Helvetica, sans-serif; font-size: 12px; }
+
             a { text-decoration: none; }
+
             a:hover { text-decoration: underline; }
+
             .filebg { background-color: #EBF0FF; height: 22px; }
         </style>
         <script language="javascript">
@@ -354,6 +359,7 @@ if ( $user_ip === 1921681 || $user_ip === 12700 || $_SESSION['sess'] === 1 ) {
             <td valign="top">
                 <div id="favorites" style="position:absolute; left:50px; font-family: Verdana; font-size: 10px; padding:5px; background-color: efefef;" nowrap>
                     <?php
+                    $txt = '';
                     foreach ( $_COOKIE as $k => $v ) {
                         if ( substr( $k, 0, 5 ) == "favs_" ) {
                             $txt .= '<input type="checkbox" name="' . substr( $k, 5 ) . '" value="' . $v . '" onClick="setFavorites(this);" checked>' .
