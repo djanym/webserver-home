@@ -20,8 +20,6 @@ session_start();
   }
  */
 
-*/
-
 // Icons images
 if ( filter_input( INPUT_GET, 'iof' ) ) {
     $iof = array(
