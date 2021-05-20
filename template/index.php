@@ -4,7 +4,7 @@
     <title>Root page</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="<?php echo HOME_URL; ?>/assets/css/main.css" rel="stylesheet">
+    <link href="<?php echo ASSETS_URL; ?>/assets/css/main.css" rel="stylesheet">
 </head>
 <script language="javascript">
     function showBox(catName) {
@@ -392,8 +392,8 @@ if ($view_mode != "simple") {
 }
 ?>
 
-<script defer href="<?php echo HOME_URL; ?>/assets/js/jquery-3.6.0.min.js"></script>
-<script defer href="<?php echo HOME_URL; ?>/assets/js/main.js"></script>
+<script defer src="<?php echo ASSETS_URL; ?>/assets/js/jquery-3.6.0.min.js"></script>
+<script defer src="<?php echo ASSETS_URL; ?>/assets/js/main.js"></script>
 
 </body>
 </html>
