@@ -1,0 +1,17 @@
+td {
+    font-family: Verdana, Arial, Helvetica, sans-serif;
+    font-size: 12px;
+}
+
+a {
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+.filebg {
+    background-color: #EBF0FF;
+    height: 22px;
+}
