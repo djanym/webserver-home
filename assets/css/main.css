@@ -1,20 +1,18 @@
 body {
     background: #fff;
     font-family: 'Ubuntu', Arial, sans-serif;
-    font-size: 16pt;
+    font-size: 12pt;
     font-weight: 300;
-    line-height: 18pt;
+    line-height: 14pt;
     color: #333333;
     margin: 0;
     padding: 0;
 }
 
 input, textarea, select {
-//font-family: 'Open Sans', sans-serif;
-    font-family: 'Ubuntu', Arial, sans-serif;
-    font-size: 16pt;
+    font-size: 12pt;
     font-weight: 300;
-    line-height: 1.75em;
+    line-height: 14pt;
     color: #888;
 }
 
@@ -123,4 +121,11 @@ td {
 .filebg {
     background-color: #EBF0FF;
     height: 22px;
+}
+
+/** Helpers **/
+
+.row-flow {
+    display: flex;
+    flex-direction: column;
 }

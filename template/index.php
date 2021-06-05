@@ -91,6 +91,15 @@ endif; ?>
 <header>
     <div class="">
         <button type="button" id="new_project_btn">Create project folder</button>
+        <div class="" id="new_project_container">
+            <form id="new_project_form">
+                <div class="row-flow">
+                    <label for="">Project slug:</label>
+                <input type="text" name="project_slug" value="" placeholder="Project slug. Example: myproject" />
+                <input type="text" name="project_folder" value="" placeholder="Root project folder name" />
+                </div>
+            </form>
+        </div>
     </div>
 </header>
 <div class="container">
@@ -251,7 +260,7 @@ endif; ?>
                     <tr>
                         <td>&nbsp;</td>
                         <td align=center><img src="index.php?iof=$ext" border=0/></td>
-                        <td class=filebg><a href="<?= urlencode($file['relative_path']) ?>"><?= htmlspecialchars(
+                        <td class=filebg><a href="<?php echo $file['relative_path']; ?>"><?= htmlspecialchars(
                                     $file['name']
                                 ) ?></a></td>
                         <td class=filebg align=right><font color=#555555><?= format_size($file['full_path']) ?></td>
