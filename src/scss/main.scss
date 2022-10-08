@@ -133,28 +133,28 @@ h1 {
 }
 
 h2 {
-    color: $color-h2;
+    //color: $color-h2;
     font-size: 2.5rem;
     letter-spacing: 1px;
 }
 
 h3 {
-    color: $color-h3;
+    //color: $color-h3;
     font-size: 2.25rem;
 }
 
 h4 {
-    color: $color-h4;
+    //color: $color-h4;
     font-size: 2rem;
 }
 
 h5 {
-    color: $color-h5;
+    //color: $color-h5;
     font-size: 1.7rem;
 }
 
 h6 {
-    color: $color-h6;
+    //color: $color-h6;
     font-size: 1.4rem;
 }
 
@@ -172,8 +172,8 @@ h1 a, h2 a, h3 a, h4 a, h5 a, h6 a {
 }
 
 p {
-    font-size: $size-p;
-    line-height: $line-height-p;
+    //font-size: $size-p;
+    //line-height: $line-height-p;
     color: #111111;
     text-align: justify;
     margin-bottom: 1em;
@@ -403,7 +403,7 @@ table {
             text-align: left;
             padding: 0.5em 1em 0.5em 1em;
             color: #fff;
-            background: #222729 url('../images/overlay.png');
+            //background: #222729 url('../images/overlay.png');
         }
 
         thead {
@@ -424,10 +424,10 @@ table {
 }
 
 .no-vpm {
-    margin-top: 0px;
-    margin-bottom: 0px;
-    padding-top: 0px;
-    padding-bottom: 0px;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 /* Icons */
@@ -508,7 +508,7 @@ div.code-toolbar {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
-    background: #222629 url('../images/overlay.png');
+    //background: #222629 url('../images/overlay.png');
     box-shadow: inset -0.25em 0 0.25em 0 rgba(0, 0, 0, 0.1);
     color: #fff;
     width: 100%;
