@@ -2,9 +2,12 @@
 
 $app_start_time = microtime(true);
 
-define('APP_VERSION', '0.1');
-define('ABSPATH', __DIR__);
+const APP_VERSION = '0.1';
+const ABSPATH = __DIR__;
 
+$app_config = yaml_parse_file(ABSPATH . '/config.yml');
+print_r($app_config);
+die;
 include ABSPATH . '/config.php';
 include ABSPATH . '/app.php';
 
