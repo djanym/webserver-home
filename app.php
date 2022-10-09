@@ -23,6 +23,8 @@ session_start();
 //if (!eregi("\.\./$", $_GET['d']) && !eregi("\.\.$", $_GET['d']) && !eregi("^[a-z]:", $_GET['d']))
 //	chdir(urldecode($_GET['d']));
 
+$action = $_POST['action'] ?? ($_GET['action'] ?? null);
+
 $dir = $_POST['d'] ?? ($_GET['d'] ?? null);
 
 // Define current path.
@@ -103,6 +105,13 @@ if ($fa_mode) {
 
 // If page opened on local server NOT from internet
 if ($user_ip === 1921681 || $user_ip === 12700 || $_SESSION['sess'] === 1) {
+    switch ($action) {
+        case 'create_project':
+            create_project();
+            break;
+        default:
+            break;
+    }
     /* ???
     if ($d = $_GET['z']) {
         chdir(".");
@@ -225,6 +234,19 @@ if ($user_ip === 1921681 || $user_ip === 12700 || $_SESSION['sess'] === 1) {
     }
     */
     require ABSPATH . '/template/index.php';
+}
+
+function create_project(){
+    create_folders();
+    create_vhost();
+}
+
+function create_folders(){
+    global $app_config;
+}
+
+function create_vhost(){
+    echo 'vhost'; die;
 }
 
 function sqldumptable($table, $sql_d)

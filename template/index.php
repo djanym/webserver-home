@@ -4,7 +4,8 @@
     <title>Root page</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="<?php echo ASSETS_URL; ?>/assets/css/main.css" rel="stylesheet">
+    <link href="<?php
+    echo ASSETS_URL; ?>/assets/css/main.css" rel="stylesheet">
 </head>
 <script language="javascript">
     function showBox(catName) {
@@ -90,13 +91,13 @@ endif; ?>
 
 <header>
     <div class="">
-        <button type="button" id="new_project_btn">Create project folder</button>
-        <div class="" id="new_project_container">
-            <form id="new_project_form">
+        <div class="container" id="new_project_container">
+            <form method="post" action="" id="new_project_form">
                 <div class="row-flow">
-                    <label for="">Project slug:</label>
-                <input type="text" name="project_slug" value="" placeholder="Project slug. Example: myproject" />
-                <input type="text" name="project_folder" value="" placeholder="Root project folder name" />
+                    <input type="hidden" name="action" value="create_project"/>
+                    <input type="text" name="project_slug" value="" placeholder="Project slug. Example: myproject"/>
+                    <input type="text" name="project_folder" value="" placeholder="Root project folder name"/>
+                    <button type="submit">Create</button>
                 </div>
             </form>
         </div>
@@ -260,7 +261,8 @@ endif; ?>
                     <tr>
                         <td>&nbsp;</td>
                         <td align=center><img src="index.php?iof=$ext" border=0/></td>
-                        <td class=filebg><a href="<?php echo $file['relative_path']; ?>"><?= htmlspecialchars(
+                        <td class=filebg><a href="<?php
+                            echo $file['relative_path']; ?>"><?= htmlspecialchars(
                                     $file['name']
                                 ) ?></a></td>
                         <td class=filebg align=right><font color=#555555><?= format_size($file['full_path']) ?></td>
@@ -401,8 +403,10 @@ if ($view_mode != "simple") {
 }
 ?>
 
-<script defer src="<?php echo ASSETS_URL; ?>/assets/js/jquery-3.6.0.min.js"></script>
-<script defer src="<?php echo ASSETS_URL; ?>/assets/js/main.js"></script>
+<script defer src="<?php
+echo ASSETS_URL; ?>/assets/js/jquery-3.6.0.min.js"></script>
+<script defer src="<?php
+echo ASSETS_URL; ?>/assets/js/main.js"></script>
 
 </body>
 </html>
