@@ -236,17 +236,40 @@ if ($user_ip === 1921681 || $user_ip === 12700 || $_SESSION['sess'] === 1) {
     require ABSPATH . '/template/index.php';
 }
 
-function create_project(){
-    create_folders();
+function create_project()
+{
+    create_project_folders();
     create_vhost();
 }
 
-function create_folders(){
+function create_project_folders()
+{
     global $app_config;
+
+    $project_slug = $_POST['project_slug']; // @TODO: filter
+    $project_folder_name = str_replace('%project-slug%', $project_slug, $app_config['project_folder_name']);
+    $project_path = ABSPATH . '/' . trim($app_config['home_path'], '/') . '/' . $project_folder_name;
+
+    create_folder($project_path);
+    create_folder($project_path . '/docs');
+    create_folder($project_path . '/' . $project_slug);
 }
 
-function create_vhost(){
-    echo 'vhost'; die;
+function create_folder($path, $message = true)
+{
+    if (file_exists($path)) {
+        return;
+    }
+    if (!mkdir($path, 0770, false) && !is_dir($path)) {
+        throw new \RuntimeException(sprintf('Directory "%s" was NOT created', $path));
+    }
+    echo sprintf('Directory "%s" was created', $path) . "\n\r";
+}
+
+function create_vhost()
+{
+    echo 'vhost';
+    die;
 }
 
 function sqldumptable($table, $sql_d)

@@ -4,8 +4,7 @@
     <title>Root page</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link href="<?php
-    echo ASSETS_URL; ?>/assets/css/main.css" rel="stylesheet">
+    <link href="<?php echo ASSETS_URL; ?>/assets/css/main.css" rel="stylesheet">
 </head>
 <script language="javascript">
     function showBox(catName) {
@@ -96,7 +95,7 @@ endif; ?>
                 <div class="row-flow">
                     <input type="hidden" name="action" value="create_project"/>
                     <input type="text" name="project_slug" value="" placeholder="Project slug. Example: myproject"/>
-                    <input type="text" name="project_folder" value="" placeholder="Root project folder name"/>
+                    <input type="text" name="project_folder" value="" placeholder="(Optional) Root project folder name"/>
                     <button type="submit">Create</button>
                 </div>
             </form>
