@@ -1,6 +1,7 @@
 {
-  "home_path": "../../",
+  "home_path": "/Users/im-user/WEB_SERVER",
   "home_url": "http://localhost",
+  "api_url": "http://localhost/ricubai/webserver-home/api.php",
   "assets_url": "http://localhost/ricubai/webserver-home/assets/",
   "project_folder_name": "w_%project-slug%",
   "project_folders": [

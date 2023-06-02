@@ -1,30 +1,39 @@
 <?php
 
-function get_listing_data($dir)
+function get_listing_data($dir = false)
 {
+    if (!$dir) {
+        $current_path = config('home_path');
+        $relative_path = null;
+    } else {
+        $current_path = config('home_path') . '/' . $dir;
+        $relative_path = $dir;
+    }
+
     $data = [];
-    $d = dir($dir);
-    while (false !== ($entry = $d->read())) {
+    $directory = dir($current_path);
+    while (false !== ($entry = $directory->read())) {
         if ($entry !== '.' && $entry !== '..') {
+            $entry_path = $current_path . '/' . $entry;
             // Add file to files array.
-            if (is_file($entry)) {
+            if (is_file($entry_path)) {
                 $fs[$entry] = array(
-                    'relative_path' => trim(RELATIVE_PATH . '/' . $entry, '/'),
-                    'full_path' => CURRENT_PATH . '/' . $entry,
+                    'relative_path' => trim($relative_path . '/' . $entry, '/'),
+                    'full_path' => $entry_path,
                     'name' => $entry,
                 );
             }
             // Add folder to folders array.
-            if (is_dir($entry) && $entry !== '_old-projects_') {
+            if (is_dir($entry_path) && $entry !== '_old-projects_') {
                 $ds[$entry] = array(
-                    'relative_path' => trim(RELATIVE_PATH . '/' . $entry, '/'),
-                    'full_path' => CURRENT_PATH . '/' . $entry,
+                    'relative_path' => trim($relative_path . '/' . $entry, '/'),
+                    'full_path' => $entry_path,
                     'name' => $entry,
                 );
             }
         }
     }
-    $d->close();
+    $directory->close();
 
     // Sort files and folders in ASC order
     asort($fs);

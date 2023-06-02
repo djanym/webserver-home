@@ -1,7 +1,5 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import config from './config';
-console.log(config);
 import App from './App';
 // import reportWebVitals from './reportWebVitals';
 // import { REACT_APP_API_URL } from './env.js';

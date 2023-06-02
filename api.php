@@ -1,14 +1,11 @@
 <?php
-
 // TODO: modernize session
 session_start();
 
-global $app_config;
+//global $app_config;
 
 include __DIR__ . '/config/config.php';
-include __DIR__ . '/app.php';
-
-print_r($app_config);die;
+include __DIR__ . '/functions.php';
 
 // Define current path.
 //if ($dir && is_dir(HOME_PATH . '/' . $dir)) {
@@ -29,8 +26,10 @@ $action = $_POST['action'] ?? ($_GET['action'] ?? null);
 $response = [];
 
 switch ($action) {
-    case 'listing':
-        $response = get_listing_data($app_config['home_path']);
+    case 'get_data':
+        if( $_GET['type'] == 'listing' ) {
+            $response = get_listing_data();
+        }
         break;
     case 'create_project':
         create_project();
