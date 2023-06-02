@@ -5,5 +5,5 @@ assets_url: http://localhost/ricubai/webserver-home # in case app path is differ
 project_folder_name: 'w_%project-slug%' # available placeholders: project-slug
 folder_structure:
   - 'docs'
+  - 'db-dump'
   - '%project-slug%'
-

@@ -23,26 +23,11 @@ session_start();
 //if (!eregi("\.\./$", $_GET['d']) && !eregi("\.\.$", $_GET['d']) && !eregi("^[a-z]:", $_GET['d']))
 //	chdir(urldecode($_GET['d']));
 
-$action = $_POST['action'] ?? ($_GET['action'] ?? null);
 
-$dir = $_POST['d'] ?? ($_GET['d'] ?? null);
 
-// Define current path.
-if ($dir && is_dir(HOME_PATH . '/' . $dir)) {
-    define('CURRENT_PATH', rtrim(HOME_PATH . '/' . $dir, '/'));
-} else {
-    define('CURRENT_PATH', HOME_PATH);
-}
-
-// Define relative path.
-if (CURRENT_PATH === HOME_PATH) {
-    define('RELATIVE_PATH', null);
-} else {
-    define('RELATIVE_PATH', $dir);
-}
 
 // Change directory.
-chdir(CURRENT_PATH);
+//chdir(CURRENT_PATH);
 
 // ???
 $password = "";
@@ -57,35 +42,6 @@ $a = explode(".", $_SERVER['REMOTE_ADDR']);
 $user_ip = (int)($a[0] . $a[1] . $a[2]);
 
 // TODO: Add ban by IP
-
-// Get list of files and folders in root directory
-$ds = $fs = array();
-$d = dir(CURRENT_PATH);
-while (false !== ($entry = $d->read())) {
-    if ($entry !== '.' && $entry !== '..') {
-        // Add file to files array.
-        if (is_file($entry)) {
-            $fs[$entry] = array(
-                'relative_path' => trim(RELATIVE_PATH . '/' . $entry, '/'),
-                'full_path' => CURRENT_PATH . '/' . $entry,
-                'name' => $entry,
-            );
-        }
-        // Add folder to folders array.
-        if (is_dir($entry) && $entry !== '_old-projects_') {
-            $ds[$entry] = array(
-                'relative_path' => trim(RELATIVE_PATH . '/' . $entry, '/'),
-                'full_path' => CURRENT_PATH . '/' . $entry,
-                'name' => $entry,
-            );
-        }
-    }
-}
-$d->close();
-
-// Sort files and folders in ASC order
-asort($fs);
-asort($ds);
 
 // Set options.
 $view_mode = $_POST['m'] ?? ($_GET['m'] ?? 'simple');
@@ -105,13 +61,7 @@ if ($fa_mode) {
 
 // If page opened on local server NOT from internet
 if ($user_ip === 1921681 || $user_ip === 12700 || $_SESSION['sess'] === 1) {
-    switch ($action) {
-        case 'create_project':
-            create_project();
-            break;
-        default:
-            break;
-    }
+
     /* ???
     if ($d = $_GET['z']) {
         chdir(".");
@@ -233,7 +183,7 @@ if ($user_ip === 1921681 || $user_ip === 12700 || $_SESSION['sess'] === 1) {
         die();
     }
     */
-    require ABSPATH . '/template/index.php';
+    require __DIR__ . '/template/index.php';
 }
 
 function create_project()

@@ -4,7 +4,7 @@ module.exports = {
     mode: 'development', // Set the mode to development
     entry: './src/js/index.js', // Change this path if your entry file is located elsewhere
     output: {
-        filename: 'app.bundle.js',
+        filename: 'index.js',
         path: path.resolve(__dirname, 'assets/js'),
     },
     module: {

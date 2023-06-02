@@ -1,21 +1,55 @@
 {
     "name": "nael-blog",
     "version": "1.0.0",
-    "main": "gulpfile.mjs",
     "devDependencies": {
-        "@wordpress/eslint-plugin": "^13.3.0",
-        "critical": "^5.0.3",
-        "del": "^7.0.0",
-        "gulp": "^4.0.2",
-        "gulp-autoprefixer": "^8.0.0",
-        "gulp-clean-css": "^4.3.0",
-        "gulp-cli": "^2.3.0",
-        "gulp-plumber": "^1.2.1",
-        "gulp-rename": "^2.0.0",
-        "gulp-rigger": "^0.5.8",
-        "gulp-sass": "^5.1.0",
-        "gulp-sourcemaps": "^3.0.0",
-        "gulp-uglify-es": "^3.0.0",
-        "node-sass": "^7.0.3"
+        "@babel/core": "^7.22.1",
+        "@babel/preset-react": "^7.22.3",
+        "autoprefixer": "^10.4.14",
+        "axios": "^1.4.0",
+        "babel-eslint": "^10.1.0",
+        "babel-loader": "^9.1.2",
+        "bootstrap": "^5.3.0",
+        "css-loader": "^6.8.1",
+        "eslint": "^8.41.0",
+        "eslint-config-prettier": "^8.8.0",
+        "eslint-plugin-react": "^7.32.2",
+        "node-sass": "^7.0.3",
+        "postcss-loader": "^7.3.2",
+        "prettier": "^2.8.8",
+        "react": "^18.2.0",
+        "react-bootstrap": "^2.7.4",
+        "react-dom": "^18.2.0",
+        "react-scripts": "4.0.3",
+        "sass": "^1.62.1",
+        "sass-loader": "^13.3.1",
+        "style-loader": "^3.3.3",
+        "web-vitals": "^2.1.4",
+        "webpack": "^5.85.0",
+        "webpack-cli": "^5.1.1"
+    },
+    "scripts": {
+        "start:react": "react-scripts start",
+        "build": "react-scripts build",
+        "test": "react-scripts test",
+        "eject": "react-scripts eject",
+        "start-webpack:serve": "webpack serve --config webpack.config.js",
+        "start:webpack:watch": "webpack --watch",
+        "build:webpack": "webpack --mode=development",
+        "build:webpack:watch": "webpack --watch --mode=development"
+    },
+    "browserslist": {
+        "production": [
+            ">0.2%",
+            "not dead",
+            "not op_mini all"
+        ],
+        "development": [
+            "last 1 chrome version",
+            "last 1 firefox version",
+            "last 1 safari version"
+        ]
+    },
+    "dependencies": {
+        "@popperjs/core": "^2.11.8"
     }
 }
