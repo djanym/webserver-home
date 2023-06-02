@@ -20,20 +20,21 @@ function get_listing_data($dir = false)
     $data = [];
     $directory = dir($current_path);
     while (false !== ($entry = $directory->read())) {
-        if (in_array($entry, $ignore_files)) {
+        // Skip ignored files.
+        if (in_array($entry, $ignore_files, true)) {
             continue;
         }
+        // Full path to file/dir.
         $entry_path = $current_path . '/' . $entry;
-        // Add file to files array.
+
+        // Add file/dir to array.
         if (is_file($entry_path)) {
             $files[$entry] = array(
                 'relative_path' => trim($relative_path . '/' . $entry, '/'),
                 'full_path' => $entry_path,
                 'name' => $entry,
             );
-        }
-        // Add folder to folders array.
-        if (is_dir($entry_path) && $entry !== '_old-projects_') {
+        } elseif (is_dir($entry_path) && $entry !== '_old-projects_') {
             $dirs[$entry] = array(
                 'relative_path' => trim($relative_path . '/' . $entry, '/'),
                 'full_path' => $entry_path,
