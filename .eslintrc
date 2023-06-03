@@ -24,7 +24,6 @@
     "react"
   ],
   "extends": [
-    //        "plugin:@wordpress/eslint-plugin/recommended"
     "eslint:recommended",
     "plugin:react/recommended",
     "prettier"
@@ -52,7 +51,6 @@
     "quotes": [
       "error",
       "single"
-    ],
-    "prettier/prettier": 0
+    ]
   }
 }

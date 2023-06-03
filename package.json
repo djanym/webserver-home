@@ -27,6 +27,9 @@
         "webpack": "^5.85.0",
         "webpack-cli": "^5.1.1"
     },
+    "dependencies": {
+        "@popperjs/core": "^2.11.8"
+    },
     "scripts": {
         "start:react": "react-scripts start",
         "build": "react-scripts build",
@@ -35,21 +38,7 @@
         "start-webpack:serve": "webpack serve --config webpack.config.js",
         "start:webpack:watch": "webpack --watch",
         "build:webpack": "webpack --mode=development",
+        "build:webpack:production": "webpack --mode=production",
         "build:webpack:watch": "webpack --watch --mode=development"
-    },
-    "browserslist": {
-        "production": [
-            ">0.2%",
-            "not dead",
-            "not op_mini all"
-        ],
-        "development": [
-            "last 1 chrome version",
-            "last 1 firefox version",
-            "last 1 safari version"
-        ]
-    },
-    "dependencies": {
-        "@popperjs/core": "^2.11.8"
     }
 }

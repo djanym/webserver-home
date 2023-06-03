@@ -1,9 +1,0 @@
-home_path: ../../
-home_url: http://localhost # without trailing slash
-assets_url: http://localhost/ricubai/webserver-home # in case app path is different from the home path.
-
-project_folder_name: 'w_%project-slug%' # available placeholders: project-slug
-folder_structure:
-  - 'docs'
-  - 'db-dump'
-  - '%project-slug%'

@@ -5,7 +5,7 @@ session_start();
 //global $app_config;
 
 include __DIR__ . '/config/config.php';
-include __DIR__ . '/functions.php';
+include __DIR__ . '/inc/functions.php';
 
 // Define current path.
 //if ($dir && is_dir(HOME_PATH . '/' . $dir)) {
