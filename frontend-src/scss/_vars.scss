@@ -1,0 +1,693 @@
+@use "sass:color";
+
+$laptop: 1366px;
+$small-laptop: 1024px;
+$tablet: 850px;
+$narrow: 728px;
+$mobile: 640px;
+
+$mobile-breakpoint: $small-laptop; // Breakpoint at which the mobile menu is displayed. Can be changed to any other value.
+
+$enable-wp-core-styles: true;
+
+$font-path: #{'../fonts'};
+
+$variable-prefix: 'custom-';
+
+// --------------- Theme Colors:
+// <editor-fold defaultstate="collapsed" desc="Theme Colors">
+
+// Don't forget to sync with the colors in functions.php or in wp-blocks.config.json.
+
+$clr-1: #d36d92;
+$clr-2: #90214a;
+$clr-3: #f5cd00;
+$clr-4: #d3b303;
+$clr-5: #005aaa;
+$clr-6: #00773c;
+$clr-7: #773c00;
+$clr-8: #ff6600;
+
+$clr-dark-1: #000000;
+$clr-dark-2: #333333;
+$clr-dark-3: #777777;
+$clr-light-1: #ffffff;
+$clr-light-2: #eeeeee;
+$clr-light-3: #bbbbbb;
+
+$clr-heading-1: $clr-1;
+
+$skip-theme-json-styles-duplicates: true; // If set to true then the styles in theme.json will not be duplicated here.
+$use-rfs-typography: false; // Use the fluid typography with the rfs mixin.
+$font-name-primary: "Roboto"; //
+$font-name-secondary: "sans-serif"; //
+
+$font-size-base: 1.5rem; // Make sure to set $font-size-base in rem.
+$line-height-base: 1.3;
+$line-height-sm: 1.2;
+$line-height-lg: 1.3;
+$p-margin-bottom: 1.25rem; // Sync with theme.json -> custom -> paragraphMarginBottom.
+$body-color: $clr-dark-2; // Sync with theme.json -> custom -> color -> body.
+
+$headings-color: $clr-dark-2; // Sync with theme.json -> custom -> color -> headings.
+$headings-margin-top: 2.5rem; // Sync with theme.json -> custom -> headingsMarginBottom.
+$headings-margin-bottom: 2rem; // Sync with theme.json -> custom -> headingsMarginBottom.
+$headings-font-weight: 700; // Sync with theme.json -> custom -> headingsFontWeight.
+$headings-line-height: 1.1; // Sync with theme.json -> custom -> headingsLineHeight.
+
+$bg-color: $clr-light-1;
+
+// </editor-fold>
+
+$container-padding-x: 1.5rem !default;
+
+$spacer: 1rem; // Base spacing unit. Used in paddings, margins, etc.
+// Not used yet.
+$spacers: (
+        0: 0,
+        1: $spacer * .25,
+        2: $spacer * .5,
+        3: $spacer,
+        4: $spacer * 1.5,
+        5: $spacer * 3,
+) !default;
+
+$border-radius: .5rem;
+$border-radius-sm: .25rem;
+$border-radius-lg: .75rem;
+$border-radius-pill: 50rem;
+
+// --------------- Typography:
+// <editor-fold defaultstate="collapsed" desc="Typography">
+
+// ?
+$typography: (
+    // Keys should be in kebab-case. Like: p1 => p-1, h1 => h-1, some123 => some-123.
+        p: (
+                font-size: $font-size-base,
+                line-height: $line-height-base,
+                margin-bottom: $p-margin-bottom
+        ),
+        entry-title: (
+                font-family: ($font-name-primary, sans-serif),
+                font-size: 3.75rem,
+                font-weight: 500,
+                line-height: $headings-line-height,
+                margin-top: 0,
+                color: $clr-heading-1,
+                text-decoration: none
+        ),
+        h-1: (
+                font-family: ($font-name-primary, sans-serif),
+                font-size: 3.75rem,
+                font-weight: 500,
+                color: $clr-2,
+                line-height: $headings-line-height,
+                margin-top: $headings-margin-top,
+                margin-bottom: $headings-margin-bottom
+        ),
+        h-2: (
+                font-family: ($font-name-primary, sans-serif),
+                font-size: 3.75rem,
+                font-weight: 500,
+                color: $clr-2,
+                line-height: $headings-line-height,
+                margin-top: $headings-margin-top,
+                margin-bottom: $headings-margin-bottom
+        ),
+        h-3: (
+                font-family: ($font-name-primary, sans-serif),
+                font-size: 3.25rem,
+                font-weight: 500,
+                color: $clr-2,
+                line-height: $headings-line-height,
+                margin-top: $headings-margin-top,
+                margin-bottom: $headings-margin-bottom
+        ),
+        h-4: (
+                font-family: ($font-name-primary, sans-serif),
+                font-size: 3rem,
+                font-weight: 500,
+                color: $clr-2,
+                line-height: $headings-line-height,
+                margin-top: $headings-margin-top,
+                margin-bottom: $headings-margin-bottom
+        ),
+        h-5: (
+                font-family: ($font-name-primary, sans-serif),
+                font-size: 2.75rem,
+                font-weight: 500,
+                color: $clr-2,
+                line-height: $headings-line-height,
+                margin-top: $headings-margin-top,
+                margin-bottom: $headings-margin-bottom
+        ),
+        h-6: (
+                font-family: ($font-name-primary, sans-serif),
+                font-size: 2.5rem,
+                font-weight: 500,
+                color: $clr-2,
+                line-height: $headings-line-height,
+                margin-top: $headings-margin-top,
+                margin-bottom: $headings-margin-bottom
+        )
+);
+
+$typography-mobile: ();
+
+// </editor-fold> --------------- Button styles:
+// <editor-fold defaultstate="collapsed" desc="Button styles">
+
+// Don't forget to add the same buttons in the $buttons-hover-state and $buttons-active-state maps. Even if empty.
+
+$primary-btn-font-size: 1.75rem; // Sync with theme.json -> custom -> buttonFontSize.
+$primary-btn-font-line-height: 1.1; // Sync with theme.json -> custom -> buttonLineHeight.
+$primary-btn-font-weight: 500; // Sync with theme.json -> custom -> buttonFontWeight.
+$primary-btn-border-radius: 1.25rem; // Sync with theme.json -> custom -> buttonBorderRadius.
+$primary-btn-padding: .75rem 2rem .5rem; // Sync with theme.json -> custom -> buttonPadding.
+$primary-btn-min-height: 3.5rem; // Sync with theme.json -> custom -> buttonMinHeight.
+$primary-btn-min-width: 10rem; // Sync with theme.json -> custom -> buttonMinWidth.
+
+$buttons: (
+    // Primary:
+        primary: (
+            //typography: p, // Uses values from $typography style.
+                font-family: ($font-name-primary, sans-serif),
+                font-size: $primary-btn-font-size,
+                line-height: $primary-btn-font-line-height,
+                background-color: $clr-1,
+                border: 1px solid $clr-1,
+                border-radius: $primary-btn-border-radius,
+                color: #FFFFFF,
+                font-weight: $primary-btn-font-weight,
+                padding: $primary-btn-padding,
+                text-decoration: none,
+                //text-transform: uppercase,
+                margin-bottom: 0,
+                min-width: $primary-btn-min-width,
+                min-height: $primary-btn-min-height,
+                transition: 0.2s linear
+        ),
+    // Secondary:
+        secondary: (
+            //typography: p, // Uses values from $typography style.
+                font-family: ($font-name-primary, sans-serif),
+                font-size: $primary-btn-font-size,
+                line-height: $primary-btn-font-line-height,
+                background-color: $clr-3,
+                border: 1px solid $clr-3,
+                border-radius: $primary-btn-border-radius,
+                color: #FFFFFF,
+                font-weight: $primary-btn-font-weight,
+                padding: $primary-btn-padding,
+                text-decoration: none,
+                text-transform: uppercase,
+                margin-bottom: 0,
+                min-width: $primary-btn-min-width,
+                min-height: $primary-btn-min-height,
+                transition: 0.2s linear
+        ),
+    // Tertiary:
+        tertiary: (
+                font-family: ($font-name-primary, sans-serif),
+                font-size: $primary-btn-font-size,
+                line-height: $primary-btn-font-line-height,
+                background-color: $clr-dark-2,
+                border: 1px solid $clr-light-1,
+                border-radius: $primary-btn-border-radius,
+                color: #FFFFFF,
+                font-weight: $primary-btn-font-weight,
+                padding: $primary-btn-padding,
+                text-decoration: none,
+                text-transform: uppercase,
+                margin-bottom: 0,
+                min-width: $primary-btn-min-width,
+                min-height: $primary-btn-min-height,
+                transition: 0.2s linear
+        )
+);
+
+$buttons-hover-state: (
+    // Primary:
+        primary: (
+                background-color: $clr-2,
+                border-color: $clr-2,
+                color: #FFFFFF,
+                text-decoration: none,
+        ),
+    // Secondary:
+        secondary: (
+                background-color: $clr-dark-2,
+                border-color: $clr-dark-2,
+                color: #FFFFFF,
+                text-decoration: none,
+        ),
+    // Tertiary:
+        tertiary: (
+                background-color: $clr-dark-1,
+                border-color: $clr-dark-1,
+                color: #FFFFFF,
+                text-decoration: none,
+        )
+);
+
+$buttons-active-state: (
+    // Primary:
+        primary: (
+                background-color: $clr-2,
+                border-color: $clr-2,
+                color: #FFFFFF,
+                text-decoration: none,
+        ),
+    // Secondary:
+        secondary: (
+                background-color: $clr-dark-2,
+                border-color: $clr-dark-2,
+                color: #FFFFFF,
+                text-decoration: none,
+        ),
+    // Tertiary:
+        tertiary: (
+                background-color: $clr-dark-1,
+                border-color: $clr-dark-1,
+                color: #FFFFFF,
+                text-decoration: none,
+        )
+);
+
+// ?
+$buttons-mobile: (
+);
+
+// </editor-fold> --------------- Bootstrap vars:
+// <editor-fold defaultstate="collapsed" desc="Bootstrap vars">
+
+$use-bootstrap-reboot: false;
+
+$font-family-base: // Project related font
+        $font-name-primary,
+        sans-serif,
+            // Cross-platform generic font family (default user interface font)
+        system-ui,
+            // Safari for macOS and iOS (San Francisco)
+        -apple-system,
+            // Windows
+        "Segoe UI",
+            // Android
+            // Emoji fonts
+        "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol" !default;
+$font-family-code: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+$font-smaller: .875em;
+
+// Bootstrap links:
+$link-color: $clr-2; // Sync with theme.json -> custom -> color -> link.
+$link-decoration: underline; // Sync with theme.json -> custom -> linkDecoration.
+$link-weight: 700; // Sync with theme.json -> custom -> linkFontWeight.
+$link-hover-color: $clr-dark-1; // Sync with theme.json -> custom -> color -> linkHover.
+$link-hover-decoration: none; // Sync with theme.json -> custom -> linkHoverDecoration.
+$link-hover-weight: 700; // Sync with theme.json -> custom -> linkHoverFontWeight.
+
+// Bootstrap headings:
+//$h1-font-size: map-get(map-get($typography, h-1), font-size);
+//$h2-font-size: map-get(map-get($typography, h-2), font-size);
+//$h3-font-size: map-get(map-get($typography, h-3), font-size);
+//$h4-font-size: map-get(map-get($typography, h-4), font-size);
+//$h5-font-size: map-get(map-get($typography, h-5), font-size);
+//$h6-font-size: map-get(map-get($typography, h-6), font-size);
+
+// </editor-fold>
+
+// --------------- Form vars:
+// <editor-fold desc="Form vars" defaultstate="collapsed">
+
+$form-fields-gap: 1rem;
+
+$input-padding-x: .75rem;
+$input-padding-y: .65rem;
+$input-min-height: 3.5rem;
+$input-bg: #ffffff;
+$input-border: 1px solid $clr-1;
+$input-border-radius: 1.5rem;
+$input-color: $body-color;
+$input-placeholder-color: #999999;
+$input-font-size: 1.5rem; // $font-size-base;
+$input-line-height: 1.1;
+
+$input-focus-box-shadow: 0 0 2px 2px #699cff; // ?
+
+$input-hover-bg: #F3F3F3; // ?
+$input-hover-border: 1px solid #000000; // ?
+
+$input-not-valid-bg: #FFF4F5; // ?
+$input-not-valid-border: 1px solid #F83446; // ?
+$not-valid-tip-color: #F83446; // ?
+$not-valid-tip-font-size: 1.25rem; // ?
+
+//$input-font-family:                     $input-btn-font-family !default;
+//$input-font-weight:                     $font-weight-base !default;
+
+$input-disabled-color: #AAACAE;
+$input-disabled-bg: #F0F0F0;
+$input-disabled-border: 1px solid #D8D8D8;
+
+// Key to use for form buttons.
+$form-button-key: primary;
+
+// </editor-fold>
+
+// --------------- Table vars:
+// <editor-fold desc="Table vars" defaultstate="collapsed">
+$table-cell-padding-y: .5rem !default;
+$table-cell-padding-x: .5rem !default;
+$table-cell-padding-y-sm: .25rem !default;
+$table-cell-padding-x-sm: .25rem !default;
+
+$table-cell-vertical-align: top !default;
+
+//$table-color:                 var(--#{$prefix}emphasis-color) !default;
+//$table-bg:                    var(--#{$prefix}body-bg) !default;
+$table-accent-bg: transparent !default;
+
+$table-th-font-weight: null !default;
+
+//$table-striped-color:         $table-color !default;
+$table-striped-bg-factor: .05 !default;
+//$table-striped-bg:            rgba(var(--#{$prefix}emphasis-color-rgb), $table-striped-bg-factor) !default;
+
+//$table-active-color:          $table-color !default;
+$table-active-bg-factor: .1 !default;
+//$table-active-bg:             rgba(var(--#{$prefix}emphasis-color-rgb), $table-active-bg-factor) !default;
+
+//$table-hover-color:           $table-color !default;
+$table-hover-bg-factor: .075 !default;
+//$table-hover-bg:              rgba(var(--#{$prefix}emphasis-color-rgb), $table-hover-bg-factor) !default;
+
+$table-border-factor: .2 !default;
+//$table-border-width:          var(--#{$prefix}border-width) !default;
+//$table-border-color:          var(--#{$prefix}border-color) !default;
+
+$table-striped-order: odd !default;
+$table-striped-columns-order: even !default;
+
+$table-group-separator-color: currentcolor !default;
+
+$table-caption-color: $clr-heading-1 !default;
+
+$table-bg-scale: -80% !default;
+// </editor-fold>
+
+$hr-margin-y: $spacer;
+$hr-color: inherit;
+$hr-border-color: #444;
+$hr-border-width: 1px;
+$hr-opacity: .25;
+
+$mark-padding: .1875em;
+$mark-color: $body-color;
+$mark-bg: color.mix(white, #ffc107, 80%);
+
+$kbd-padding-y: .1875rem;
+$kbd-padding-x: .375rem;
+$kbd-font-size: $font-smaller;
+$kbd-color: $bg-color;
+$kbd-bg: $body-color;
+
+$legend-margin-bottom: .5rem !default;
+$legend-font-size: 1.5rem !default;
+$legend-font-weight: null !default;
+
+// ---------------------------------------------------------
+// Project related vars:
+//
+
+//
+// Top nav row vars:
+//
+// $top-nav-row-max-width is used to set the maximum width of the menu row including the logo. Anyway the background color of the row is applied to the full width.
+$top-nav-row-max-width: 86rem;
+$top-nav-row-min-height: 18.75rem; // 300px
+$top-nav-row-gap: 4rem;
+$top-nav-row-spacing-x: 1.75rem;
+$top-nav-row-spacing-y: 1.5rem; // Fixed inner spacing from the top and bottom of the row.
+$top-nav-row-mobile-spacing-x: 1.5rem; // ?
+$top-nav-row-mobile-spacing-y: false; // ?
+$top-nav-row-bg-color: $clr-1;
+$top-nav-row-bg-color-hover: false;
+$top-nav-row-bg-color-scrolled: $clr-1; // Background color of the navigation bar when the page is scrolled.
+
+//
+// Navigation vars:
+//
+$navbar-mobile: $mobile-breakpoint; // Breakpoint at which the mobile menu is displayed // ?
+
+$navbar-item-dropdown-arrow: false; // Adds arrow to the menu item if it has a dropdown. Values: true/false.
+$navbar-font-size: 1.375rem; // Main font size of the navigation bar.
+$navbar-bg-color: false; // Background color of the navigation bar.
+
+$navbar-top-items-gap: 1.25rem; // Gap between the top <li> items.
+$navbar-top-li-bg-color: false; // Background color of the top <li> item.
+$navbar-top-li-bg-color-hover: false; // Background color of the top <li> item on hover.
+$navbar-top-li-bg-color-active: false; // Background color of the top <li> item on active.
+$navbar-top-li-bg-color-current: false; // Background color of the current (active) item or its parent.
+
+$navbar-top-link-spacing-x: 0; // Horizontal spacing around the top <a> links.
+$navbar-top-link-spacing-y: 0; // Vertical spacing around the top <a> links.
+
+$navbar-item-link-color: $clr-light-1; // Color of the top <a> links.
+$navbar-item-link-decoration: none;
+$navbar-item-link-weight: 500;
+$navbar-mbl-item-link-color: false;
+$navbar-mbl-item-link-decoration: false;
+$navbar-mbl-item-link-weight: false;
+
+$navbar-item-link-hover-color: $clr-3; // Color of the top <a> links on hover.
+$navbar-item-link-hover-decoration: none;
+$navbar-item-link-hover-weight: false;
+$navbar-mbl-item-link-hover-color: false;
+$navbar-mbl-item-link-hover-decoration: underline;
+$navbar-mbl-item-link-hover-weight: false;
+
+$navbar-item-link-active-color: $clr-3;
+$navbar-item-link-active-decoration: none;
+$navbar-item-link-active-weight: false;
+
+$navbar-item-link-current-color: $clr-3;
+$navbar-item-link-current-decoration: none;
+$navbar-item-link-current-weight: false;
+
+// Submenu:
+$navbar-subm-bg-color: $clr-2; // Background color of the submenu container.
+$navbar-subm-items-gap: 2rem; // Gap between the submenu items.
+$navbar-subm-ul-spacing-y: .75rem; // Vertical spacing for the submenu container.
+$navbar-subm-ul-spacing-x: 1.25rem; // Horizontal spacing for the submenu container.
+$navbar-subm-link-spacing-y: false; // Vertical spacing for the submenu <a> links.
+$navbar-subm-link-spacing-x: false; // Horizontal spacing for the submenu <a> links.
+// For mobile:
+$navbar-mbl-subm-bg-color: false;
+$navbar-mbl-subm-items-gap: .25rem;
+$navbar-mbl-subm-ul-spacing-y: 0;
+$navbar-mbl-subm-ul-spacing-x: 1rem;
+$navbar-mbl-subm-ul-spacing-right: 0;
+$navbar-mbl-subm-link-spacing-x: 0;
+$navbar-mbl-subm-link-spacing-y: .25rem;
+
+// Submenu items:
+$navbar-subm-li-bg-color: false; // Background color of the submenu <li> item.
+$navbar-subm-li-bg-color-hover: false; // Background color of the submenu <li> item on hover.
+$navbar-subm-li-bg-color-active: false; // Background color of the submenu <li> item on active.
+$navbar-subm-li-bg-color-current: false; // Background color of the current (active) submenu item.
+
+// For mobile:
+$navbar-mbl-subm-li-bg-color: false; // ?
+$navbar-mbl-subm-li-bg-color-hover: false; // ?
+$navbar-mbl-subm-li-bg-color-active: false; // ?
+$navbar-mbl-subm-li-bg-color-current: false; // ?
+
+// Color of the submenu <a> links.
+$navbar-subm-link-color: $clr-light-1;
+$navbar-subm-link-decoration: false;
+$navbar-subm-link-weight: 300;
+
+$navbar-subm-link-color-hover: $clr-light-1;
+$navbar-subm-link-decoration-hover: underline;
+$navbar-subm-link-weight-hover: false;
+
+$navbar-subm-link-color-current: $clr-3;
+$navbar-subm-link-decoration-current: underline;
+$navbar-subm-link-weight-current: false;
+
+$navbar-subm-link-color-active: $clr-3;
+$navbar-subm-link-decoration-active: underline;
+$navbar-subm-link-weight-active: false;
+
+$navbar-mbl-subm-link-color: false; // ?
+$navbar-mbl-subm-link-color-hover: false; // ?
+$navbar-mbl-subm-link-color-active: false; // ?
+$navbar-mbl-subm-link-color-current: false; // ?
+
+// Text decoration of the submenu <a> links. // ?
+
+// Font weight of the submenu <a> links. // ?
+
+// Mobile navigation:
+
+$navbar-mobile-width: 100%; // Can be like: width: calc(#{vars.$navbar-mobile} * 0.7); // ?
+$navbar-mobile-bg-color: $clr-1; // Background color of the navigation container for the mobile. // ?
+$navbar-mobile-items-spacing-x: 24px; // Horizontal spacing around the items. // ?
+$navbar-mobile-items-spacing-y: 1rem; // Vertical spacing around the items. // ?
+$navbar-mobile-items-gap: 0.25rem; // Gap between the items. // ?
+$navbar-mobile-items-align: flex-start; // Horizontal alignment of the items. // ?
+
+$navbar-mobile-item-font-color: false; // ?
+$navbar-mobile-item-spacing-x: false; // Horizontal spacing around a single item. // ?
+$navbar-mobile-item-spacing-y: 0.25rem; // Vertical spacing around a single item. // ?
+
+//$navbar-mobile-submenu-bg-color: $color-1; // Background color of the dropdown container for the mobile. // ?
+//$navbar-mobile-submenu-container-spacing-y: false; // Vertical spacing for the submenu container. // ?
+//$navbar-mobile-submenu-container-spacing-x: false; // Horizontal spacing for the submenu container. // ?
+//$navbar-mobile-submenu-items-gap: 12px; // ?
+//$navbar-mobile-submenu-item-spacing-y: false; // Vertical spacing for the submenu items // ?
+
+$navbar-mobile-submenu-item-spacing-x: false; // Horizontal spacing for the submenu items // ?
+$navbar-mobile-submenu-item-font-color: false; // ?
+
+$navbar-mobile-toggler-bg-color: transparent; // ?
+$navbar-mobile-toggler-bg-color-hover: false; // ?
+$navbar-mobile-toggler-border: none; // ?
+$navbar-mobile-toggler-border-radius: false; // ?
+$navbar-mobile-toggler-line-color: $clr-light-1; // ?
+$navbar-mobile-toggler-line-color-hover: $clr-light-3; // ?
+$navbar-mobile-toggler-line-height: 3px; // ?
+$navbar-mobile-toggler-width: 28px; // ?
+$navbar-mobile-toggler-height: 24px; // ?
+$navbar-mobile-toggler-padding: 2px; // ?
+
+$navbar-mobile-closer-line-height: 2px; // ?
+$navbar-mobile-closer-line-color: $clr-light-1; // ?
+$navbar-mobile-closer-width: 30px; // ?
+$navbar-mobile-closer-height: 30px; // ?
+
+$navbar-mbl-dropdown-arrow-color: $clr-light-1; // Color of the dropdown arrow on mobile.
+
+// --------------- Footer vars:
+// <editor-fold defaultstate="collapsed" desc="Footer related vars">
+
+$footer-max-width: 80rem; // $top-nav-row-max-width;
+$footer-spacing-y: 2rem;
+$footer-bg-color: $clr-1;
+$footer-rows-gap: 6rem;
+$footer-widget-gap: false;
+
+// </editor-fold> --------------- Content related vars:
+// <editor-fold defaultstate="collapsed" desc="Content related vars">
+
+// $max-content-layout-width is used to set the maximum width of the content wrapper/container.
+$post-content-spacing-x: 1.5rem; // Spacing around the one of the horizontal sides of the content block. // ?
+$post-content-spacing-y: 4rem; // Spacing around the one of the vertical sides of the content block.
+$post-content-spacing-bottom: 5rem; // Spacing at the bottom of the content.
+$breakout-content-spacing-x: 0.75rem; // in case the screen is narrower than the $breakout-content-max-width. // ?
+
+$post-content-max-width: 60rem + $post-content-spacing-x; // Sync with theme.json -> layout -> contentSize.
+$breakout-content-max-width: 70rem + $breakout-content-spacing-x; // Sync with theme.json -> layout -> wideSize.
+$container-wider-max-width: calc($post-content-max-width + 4rem); // For `.content-width-wider`. Should be wider than normal post content. // ?
+$container-narrow-max-width: 48rem; // For `.content-width-narrow`. Should be narrower than normal post content. // ?
+$container-with-sidebar-max-width: $container-wider-max-width; // ?
+$container-with-sidebar-gap: 3rem; // Gap between sidebar and content. // ?
+$sidebar-content-width: calc($container-wider-max-width - $container-narrow-max-width - $container-with-sidebar-gap - ($post-content-spacing-x * 2)); // or 224px // ?
+
+$post-content-flow-spacing: 1rem; // For .flow class. Adds spacing between the items. // ?
+
+$cover-block-height: 18.75rem;
+$cover-block-min-height: false;
+
+$wp-block-group-items-default-gap: false; // If set then all blocks in the group will have margin-bottom of this value. // ?
+$wp-block-buttons-gap: 1.5rem; // ?
+
+// </editor-fold> ---------------
+// Sliders
+//
+$slider-hero-height: 800px; // false; // 99vh;
+$slider-hero-max-height: 100vh; // false; // 99vh;
+$slider-hero-content-font-color: #ffffff;
+$slider-transition-duration: .6s;
+$slider-transition: transform $slider-transition-duration ease-in-out !default; // Define transform transition first if
+
+$slider-control-color: $clr-light-1 !default;
+$slider-control-width: 15% !default;
+$slider-control-opacity: .5 !default;
+$slider-control-hover-opacity: .9 !default;
+$slider-control-transition: opacity .15s ease !default;
+$slider-control-icon-filter: null !default;
+
+$slider-indicator-width: 30px !default;
+$slider-indicator-height: 3px !default;
+$slider-indicator-hit-area-height: 10px !default;
+$slider-indicator-spacer: 3px !default;
+$slider-indicator-opacity: .5 !default;
+$slider-indicator-active-bg: $clr-light-1 !default;
+$slider-indicator-active-opacity: 1 !default;
+$slider-indicator-transition: opacity .6s ease !default;
+
+$slider-caption-width: 70% !default;
+$slider-caption-color: $clr-light-1 !default;
+$slider-caption-padding-y: 1.25rem !default;
+$slider-caption-spacer: 1.25rem !default;
+
+$slider-control-icon-width: 2rem !default;
+
+$slider-control-prev-icon-bg: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='#{$slider-control-color}'><path d='M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0'/></svg>") !default;
+$slider-control-next-icon-bg: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='#{$slider-control-color}'><path d='M4.646 1.646a.5.5 0 0 1 .708 0l6 6a.5.5 0 0 1 0 .708l-6 6a.5.5 0 0 1-.708-.708L10.293 8 4.646 2.354a.5.5 0 0 1 0-.708'/></svg>") !default;
+
+$slider-enable-gradients: true;
+
+// Social
+//
+$social-icon-size: 3rem;
+$social-icons-gap: 1rem;
+
+//
+// The WP Blocks
+//
+////////////////////////////////
+
+//
+// Custom Container (custom-container)
+//
+$custom-container-spacing-y: 60px; // ?
+$custom-container-spacing-y-mobile: 50px; // ?
+$custom-container-has-horizontal-scroller-option: true; // ?
+$custom-container-has-grid-layout-option: true; // ?
+$custom-container-has-flex-layout-option: true; // ?
+$custom-container-horizontal-scroller-gap: 30px; // ?
+$custom-container-grid-layout-gap: 30px; // ?
+$custom-container-flex-layout-gap: 30px; // ?
+
+//
+// Custom Gallery Container (custom-gallery-container)
+//
+$custom-gallery-container-spacing-y: 30px; // ?
+
+//
+// Custom Media + Text Container (custom-mdia-text-container)
+//
+$custom-media-text-container-spacing-y: 70px; // ?
+$custom-media-text-container-gap: 100px; // ?
+$custom-media-text-container-gap-mobile: 32px; // ?
+
+//
+// Card (card)
+//
+$card-container-default-width: 100%; // ?
+$card-inside-gap: 20px; // ?
+$card-container-padding-x: 20px; // ?
+$card-container-padding-y: 20px; // ?
+$card-container-border-radius: 20px; // ?
+
+//
+// Card with Image (card-image)
+//
+$card-image-default-width: 100%; // ?
+$card-image-inside-gap: 12px; // ?
+$card-image-padding-x: 0; // ?
+$card-image-padding-y: 0; // ?
+$card-image-border-radius: false; // ?

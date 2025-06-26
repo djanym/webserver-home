@@ -1,16 +1,23 @@
 const path = require('path');
-const { BundleStatsWebpackPlugin } = require('bundle-stats-webpack-plugin');
+const {BundleStatsWebpackPlugin} = require('bundle-stats-webpack-plugin');
+
+const yargs = require('yargs');
+const {hideBin} = require('yargs/helpers');
+const argv = yargs(hideBin(process.argv)).argv;
+
+// Environment flag
+const isDevelopment = !argv.prod;
 
 module.exports = {
-    mode: 'development', // Set the mode to development
-    entry: './src/js/index.js', // Entry point for React app
+    mode: isDevelopment ? 'development' : 'production',
+    entry: './js/appEntry.js', // Entry point for React app
     output: {
-        filename: 'index.js',
-        path: path.resolve(__dirname, '../frontend-public/assets/js'), // Output directory for bundled JS
+        filename: 'app-bundle.js',
+        path: path.resolve(__dirname, '../frontend-public/assets/js') // Output directory for bundled JS
     },
     // Resolve configuration for React and JSX
     resolve: {
-        extensions: ['.js', '.jsx'],
+        extensions: ['.js', '.jsx']
     },
     module: {
         rules: [
@@ -24,12 +31,12 @@ module.exports = {
                     options: {
                         presets: ['@babel/preset-env', '@babel/preset-react'] // React preset
                     }
-                },
+                }
             },
             // Rule for handling SCSS files
             {
                 test: /\.scss$/,
-                use: ['style-loader', 'css-loader', 'sass-loader'],
+                use: ['style-loader', 'css-loader', 'sass-loader']
             },
             // Rule for handling images and other assets
             {
@@ -47,7 +54,7 @@ module.exports = {
                     filename: '../fonts/[name][ext]' // Output fonts to assets/fonts
                 }
             }
-        ],
+        ]
     },
     plugins: [
         new BundleStatsWebpackPlugin({
@@ -61,17 +68,18 @@ module.exports = {
                 modules: true,
                 builtAt: true,
                 hash: true,
-                moduleAssets: false,
-            },
-        }),
+                moduleAssets: false
+            }
+        })
     ],
-    devtool: 'eval-source-map', // Add the devtool option for better debugging experience
+    devtool: isDevelopment ? 'eval-source-map' : false, // Use eval-source-map for development
+    // devtool: 'eval-source-map', // Add the devtool option for better debugging experience
     stats: {
         preset: 'summary',
         assets: true,
         chunks: true,
         modules: true,
         builtAt: true,
-        hash: true,
-    },
+        hash: true
+    }
 };

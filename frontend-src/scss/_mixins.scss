@@ -1,0 +1,809 @@
+@charset "UTF-8";
+
+@use "sass:math";
+@use "sass:list";
+@use "sass:meta";
+@use "sass:string";
+@use "sass:color";
+@use "sass:map";
+@use "sass:selector";
+@use "functions" as fn;
+
+@use "bootstrap-required";
+//@import "bootstrap-required";
+
+$rfs-unit: rem !default;
+$rfs-rem-value: 16 !default;
+
+// Helpful variables with lists.
+
+$_buttons-list: (
+        "button",
+        "[type='button']",
+        "[type='reset']",
+        "[type='submit']",
+        ".button",
+);
+$all-buttons: list.join($_buttons-list, ', ');
+//$all-buttons: _assign-inputs($_buttons-list);
+//$all-buttons-active: _assign-inputs($_buttons-list, active);
+//$all-buttons-focus: _assign-inputs($_buttons-list, focus);
+//$all-buttons-hover: _assign-inputs($_buttons-list, hover);
+//^^^
+// Usage: #{$all-buttons-active} { styles }
+//^^^
+
+$_text-inputs-list: (
+        "[type='color']",
+        "[type='date']",
+        "[type='datetime']",
+        "[type='datetime-local']",
+        "[type='email']",
+        "[type='month']",
+        "[type='number']",
+        "[type='password']",
+        "[type='search']",
+        "[type='tel']",
+        "[type='text']",
+        "[type='time']",
+        "[type='url']",
+        "[type='week']",
+        "input:not([type])",
+        "textarea",
+);
+$all-text-inputs: list.join($_text-inputs-list, ', ');
+//$all-text-inputs: _assign-inputs($_text-inputs-list);
+//$all-text-inputs-active: _assign-inputs($_text-inputs-list, active);
+//$all-text-inputs-focus: _assign-inputs($_text-inputs-list, focus);
+//$all-text-inputs-hover: _assign-inputs($_text-inputs-list, hover);
+//$all-text-inputs-invalid: _assign-inputs($_text-inputs-list, invalid);
+//^^^
+// Usage: #{$all-text-inputs-active} { styles }
+//^^^
+
+
+//********** hidden text
+
+@mixin textHidden {
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important; // Fix for https://github.com/twbs/bootstrap/issues/25686
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+
+    // Fix for positioned table caption that could become anonymous cells
+    &:not(caption) {
+        position: absolute !important;
+        top: auto !important;
+        left: -10000px !important;
+    }
+}
+
+//********** Clearfix mixin.
+
+%clearfix {
+    zoom: 1;
+
+    &:before, &:after {
+        content: " ";
+        display: table;
+    }
+
+    &:after {
+        visibility: hidden;
+        display: block;
+        font-size: 0;
+        content: " ";
+        clear: both;
+        height: 0;
+    }
+}
+
+//^^^
+// Usage: @extend %clearfix;
+//^^^
+
+
+//********** Define default font size.
+
+@function calculateRem($value) {
+    // Check if the value contains "px" as a unit
+    @if unit($value) == 'px' {
+        $rem: strip-unit(math.div($value, 16)); // Convert pixels to rems
+        @return $rem + rem; // Convert pixels to rems
+    } @else {
+        @return $value; // Skip conversion if the value doesn't contain "px"
+    }
+}
+
+@function strip-unit($number) {
+    @if type-of($number) == 'number' and not unitless($number) {
+        @return math.div($number, $number * 0 + 1);
+    }
+
+    @return $number;
+}
+
+// Helper function to get the formatted non-responsive value
+@function nrfs-value($values) {
+    // Convert to list
+    $values: if(meta.type-of($values) != list, ($values,), $values);
+
+    $val: "";
+
+    // Loop over each value and calculate value
+    @each $value in $values {
+        @if $value == 0 {
+            $val: $val + " 0";
+        } @else {
+            // Cache $value unit
+            $unit: if(meta.type-of($value) == "number", math.unit($value), false);
+
+            @if $unit == px {
+                // Convert to rem if needed
+                $val: $val + " " + if($rfs-unit == rem, #{fn.divide($value, $value * 0 + $rfs-rem-value)}rem, $value);
+            } @else if $unit == rem {
+                // Convert to px if needed
+                $val: $val + " " + if($rfs-unit == px, #{fn.divide($value, $value * 0 + 1) * $rfs-rem-value}px, $value);
+            } @else {
+                // If $value isn't a number (like inherit) or $value has a unit (not px or rem, like 1.5em) or $ is 0, just print the value
+                $val: $val + " " + $value;
+            }
+        }
+    }
+
+    // Remove first space
+    @return string.unquote(string.slice($val, 2));
+}
+
+@mixin font($size, $line-height: false, $weight: false, $style: false, $font-family: false) {
+    @if $size {
+        font-size: nrfs-value($size);
+    }
+    @if $line-height {
+        line-height: nrfs-value($line-height);
+    }
+    @if $weight {
+        font-weight: $weight;
+    }
+    @if $style {
+        font-style: $style;
+    }
+    @if $font-family {
+        font-family: $font-family;
+    }
+}
+
+@mixin font-rfs($size, $line-height: false, $weight: false, $style: false, $font-family: false) {
+    @if $size {
+        @include font-size($size);
+    }
+    @if $line-height {
+        line-height: nrfs-value($line-height);
+    }
+    @if $weight {
+        font-weight: $weight;
+    }
+    @if $style {
+        font-style: $style;
+    }
+    @if $font-family {
+        font-family: $font-family;
+    }
+}
+
+@mixin line-height($size, $important: false) {
+    @if $important {
+        line-height: $size !important;
+        line-height: nrfs-value($size) !important;
+    } @else {
+        line-height: $size;
+        line-height: nrfs-value($size);
+    }
+}
+
+@mixin text-size($size, $height, $important: false) {
+    @if $important {
+        @include font-size($size, '!important');
+        @include line-height($height, '!important');
+    } @else {
+        @include font-size($size);
+        @include line-height($height);
+    }
+
+}
+
+//^^^
+// Usage: @include font-size(14px);
+//^^^
+
+@mixin generate-properties($properties, $important: false) {
+    $_important: if($important, !important, null);
+
+    @each $property, $property-value in $properties {
+        @if $property-value {
+            @if $property == 'typography' {
+                @include generate-properties-from($typography, #{$property-value}, $important);
+            } @else if $property == 'typography-mobile' {
+                @include generate-properties-from($typography-mobile, #{$property-value}, $important);
+            } @else if $property == 'font-size' or $property == 'line-height' {
+                #{$property}: nrfs-value($property-value) $_important;
+            } @else if ($property == 'padding') {
+                padding: nrfs-value($property-value) $_important;
+            } @else if ($property == 'padding-right') {
+                padding-right: nrfs-value($property-value) $_important;
+            } @else if ($property == 'padding-left') {
+                padding-left: nrfs-value($property-value) $_important;
+            } @else if ($property == 'padding-top') {
+                padding-top: nrfs-value($property-value) $_important;
+            } @else if ($property == 'padding-bottom') {
+                padding-bottom: nrfs-value($property-value) $_important;
+            } @else if ($property == 'margin') {
+                margin: nrfs-value($property-value) $_important;
+            } @else if ($property == 'margin-right') {
+                margin-right: nrfs-value($property-value) $_important;
+            } @else if ($property == 'margin-left') {
+                margin-left: nrfs-value($property-value) $_important;
+            } @else if ($property == 'margin-top') {
+                margin-top: nrfs-value($property-value) $_important;
+            } @else if ($property == 'margin-bottom') {
+                margin-bottom: nrfs-value($property-value) $_important;
+            } @else if ($property == 'border-radius') {
+                border-radius: nrfs-value($property-value) $_important;
+            } @else {
+                #{$property}: $property-value $_important;
+            }
+        }
+    }
+}
+
+@mixin generate-rfs-properties($properties, $important: false) {
+    $_important: if($important, !important, null);
+
+    @each $property, $property-value in $properties {
+        @if $property-value {
+            @if $property == 'typography' {
+                @include generate-rfs-properties-from($typography, #{$property-value}, $important);
+            } @else if $property == 'typography-mobile' {
+                @include generate-rfs-properties-from($typography-mobile, #{$property-value}, $important);
+            } @else if $property == 'font-size' or $property == 'line-height' {
+                #{$property}: nrfs-value($property-value) $_important;
+            } @else if ($property == 'padding') {
+                @include padding($property-value);
+            } @else if ($property == 'padding-right') {
+                @include padding-right($property-value);
+            } @else if ($property == 'padding-left') {
+                @include padding-left($property-value);
+            } @else if ($property == 'padding-top') {
+                @include padding-top($property-value);
+            } @else if ($property == 'padding-bottom') {
+                @include padding-bottom($property-value);
+            } @else if ($property == 'margin') {
+                @include margin($property-value);
+            } @else if ($property == 'margin-right') {
+                @include margin-right($property-value);
+            } @else if ($property == 'margin-left') {
+                @include margin-left($property-value);
+            } @else if ($property == 'margin-top') {
+                @include margin-top($property-value);
+            } @else if ($property == 'margin-bottom') {
+                @include margin-bottom($property-value);
+            } @else if ($property == 'border-radius') {
+                @include border-radius($property-value);
+            } @else {
+                #{$property}: $property-value $_important;
+            }
+        }
+    }
+}
+
+@mixin generate-properties-from($array, $key, $important: false) {
+    $properties: map.get($array, $key);
+
+    @include generate-properties($properties, $important);
+}
+
+@mixin generate-rfs-properties-from($array, $key, $important: false) {
+    $properties: map.get($array, $key);
+
+    @include generate-rfs-properties($properties, $important);
+}
+
+
+//********** A list of all HTML button elements.
+
+@function _assign-inputs(
+    $inputs,
+    $pseudo: null
+) {
+    $list: ();
+
+    @each $input in $inputs {
+        $input: string.unquote($input);
+        $input: if($pseudo, $input + ":" + $pseudo, $input);
+        $list: list.append($list, $input, comma);
+    }
+
+    @return join($list, ', ');
+    //@return $list;
+}
+
+@mixin clearfix() {
+    &::after {
+        display: block;
+        clear: both;
+        content: "";
+    }
+}
+
+//********** Truncates text and adds an ellipsis to represent overflow.
+
+@mixin ellipsis(
+    $width: 100%,
+    $display: inline-block
+) {
+    display: $display;
+    max-width: $width;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    word-wrap: normal;
+}
+
+//^^^
+// Usage: @include ellipsis;
+//^^^
+
+
+//********** Margin and Padding mixins.
+
+//@mixin _directional-property(
+//    $property,
+//    $suffix,
+//    $values
+//) {
+//    $top:    $property + "-top"    + if($suffix, "-#{$suffix}", "");
+//    $bottom: $property + "-bottom" + if($suffix, "-#{$suffix}", "");
+//    $left:   $property + "-left"   + if($suffix, "-#{$suffix}", "");
+//    $right:  $property + "-right"  + if($suffix, "-#{$suffix}", "");
+//    $all:    $property +             if($suffix, "-#{$suffix}", "");
+//
+//    $values: $values;
+//
+//    @if _contains-falsy($values) {
+//        @if list.nth($values, 1) { #{$top}: list.nth($values, 1); }
+//
+//        @if length($values) == 1 {
+//            @if list.nth($values, 1) { #{$right}: list.nth($values, 1); }
+//        } @else {
+//            @if list.nth($values, 2) { #{$right}: list.nth($values, 2); }
+//        }
+//
+//        @if length($values) == 2 {
+//            @if list.nth($values, 1) { #{$bottom}: list.nth($values, 1); }
+//            @if list.nth($values, 2) { #{$left}: list.nth($values, 2); }
+//        } @else if length($values) == 3 {
+//            @if list.nth($values, 3) { #{$bottom}: list.nth($values, 3); }
+//            @if list.nth($values, 2) { #{$left}: list.nth($values, 2); }
+//        } @else if length($values) == 4 {
+//            @if list.nth($values, 3) { #{$bottom}: list.nth($values, 3); }
+//            @if list.nth($values, 4) { #{$left}: list.nth($values, 4); }
+//        }
+//    } @else {
+//        #{$all}: $values;
+//    }
+//}
+
+//@mixin margin($values) {
+//    @include _directional-property(margin, null, $values);
+//}
+
+//@mixin padding($values) {
+//    @include _directional-property(padding, null, $values);
+//}
+//^^^
+// Usage: @include padding(1px null 3px 4px);
+// Usage: @include margin(10px 3em 20vh null);
+//^^^
+
+//********** Generates vendor prefixes.
+
+@mixin prefix($property, $value, $vendors: webkit moz ms o, $default: true) {
+    @if $vendors {
+        @each $vendor in $vendors {
+            #{"-" + $vendor + "-" + $property}: #{$value};
+        }
+    }
+    @if $default {
+        #{$property}: #{$value};
+    }
+}
+
+//^^^
+// Usage: @include prefix('box-sizing', 'border-box', moz webkit);
+//^^^
+
+@mixin make-container($gutter-x) {
+    width: 100%;
+    padding-right: calc($gutter-x * .5);
+    padding-left: calc($gutter-x * .5);
+    margin-right: auto;
+    margin-left: auto;
+}
+
+
+//********** sticky/absolute/fixed block.
+
+@mixin absolute(
+    $top: 0,
+    $index: 1000
+) {
+    position: absolute;
+    top: $top;
+    z-index: $index;
+}
+
+@mixin fixed(
+    $top: 0,
+    $index: 1000
+) {
+    position: fixed;
+    top: $top;
+    z-index: $index;
+}
+
+@mixin sticky(
+    $top: 0,
+    $index: 1000
+) {
+    position: sticky;
+    top: $top;
+    z-index: $index;
+}
+
+//^^^
+// Usage: @include fixed(0, 100);
+// Usage: @include absolute(0, 100);
+// Usage: @include sticky(0, 100);
+//^^^
+
+
+//********** Full Width/Height and Centered Image.
+
+@mixin img-cover {
+    min-height: 100%;
+    width: 100%;
+    height: auto;
+    -o-object-fit: cover;
+    object-fit: cover;
+    color: #ffffff;
+}
+
+//^^^
+// Usage: @include img-cover;
+//^^^
+
+
+//********** Fullscreen Background Image.
+
+@mixin bg-cover(
+    $url: false,
+    $positions: false,
+    $attachment: false,
+    $size: false
+) {
+    background: {
+        @if $url {
+            image: url($url);
+        }
+        repeat: no-repeat;
+        @if $positions {
+            position: $positions;
+        } @else {
+            position: center center;
+        }
+        @if $attachment {
+            attachment: $attachment;
+        } @else {
+            attachment: fixed;
+        }
+        @if $size {
+            size: $size;
+        } @else {
+            size: cover;
+        }
+    }
+}
+
+//^^^
+// Usage: @include bg-cover('../images/cover.jpg', top center, scroll, 100% auto);
+//^^^
+
+
+//********** Font Awesome mixin
+
+@mixin fa_icon(
+    $icon,
+    $size,
+    $direction
+) {
+    @import url('//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css');
+    position: relative;
+
+    @if $direction == left {
+        @if $size {
+            padding-left: $size + 5;
+        }
+        &::after {
+            left: 0;
+        }
+    } @else if $direction == right {
+        @if $size {
+            padding-right: $size + 7;
+        }
+        &::after {
+            right: 0;
+        }
+    } @else if $direction { /*..*/
+    } @else {
+        @error "Unknown direction #{$direction}." use direction left / right / none;
+    }
+
+    &::after {
+        content: '#{$icon}';
+        font-family: FontAwesome;
+        font-style: normal;
+        font-weight: normal;
+        position: absolute;
+        text-decoration: none;
+        @if $size {
+            font-size: $size;
+        }
+    }
+}
+
+//^^^
+// Usage: @include fa_icon("\f004", 70px, left/right/none);
+//^^^
+
+
+//********** vertical align element
+
+@mixin vertical_align {
+    position: relative;
+    top: 50%;
+    @include prefix(transform, translateY(-50%), 'webkit' 'ms' 'moz');
+}
+
+//^^^
+// Usage: @include vertical_align;
+//^^^
+
+@mixin visually-hidden() {
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important; // Fix for https://github.com/twbs/bootstrap/issues/25686
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+
+    // Fix for positioned table caption that could become anonymous cells
+    &:not(caption) {
+        position: absolute !important;
+    }
+}
+
+//********** Overlay background mixin
+
+@mixin overlay-bg(
+    $color: false,
+    $opacity: false,
+    $next: false
+) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 1;
+    @if $color {
+        background-color: #{$color};
+    }
+    @if $opacity {
+        opacity: #{$opacity};
+        $opacity-ie: $opacity * 100;
+        filter: alpha(opacity=$opacity-ie); //IE8
+    }
+    @if $next {
+        ~ #{$next} {
+            position: relative;
+            z-index: 2;
+        }
+    }
+}
+
+//^^^
+// Usage: @include overlay-bg(white, .5, '.next-div');
+//^^^
+
+//********** triangle mixin
+
+%triangle {
+    position: absolute;
+    top: 100%;
+    width: 100%;
+    text-align: center;
+    line-height: 21px;
+
+    &::before {
+        content: '';
+        position: relative;
+        z-index: 1;
+    }
+}
+
+@mixin transition($transition...) {
+    @if list.length($transition) == 0 {
+        $transition: all .2s ease-in-out;
+    }
+
+    @if list.length($transition) > 1 {
+        @each $value in $transition {
+            @if $value == null or $value == none {
+                @warn "The keyword 'none' or 'null' must be used as a single argument.";
+            }
+        }
+    }
+
+    @if list.nth($transition, 1) != null {
+        transition: $transition;
+    }
+
+    @if list.nth($transition, 1) != null and list.nth($transition, 1) != none {
+        @media (prefers-reduced-motion: reduce) {
+            transition: none;
+        }
+    }
+}
+
+@mixin triangle(
+    $color: false,
+    $size: false
+) {
+    .triangle {
+        @extend %triangle;
+
+        &::before {
+            border-left: $size solid transparent;
+            border-right: $size solid transparent;
+            border-top: $size solid $color;
+            top: $size;
+        }
+    }
+}
+
+//^^^
+// Usage: @include triangle(white, 15px);
+//^^^
+
+
+//********** linear gradient mixin
+
+@mixin linear-gradient(
+    $top-color,
+    $bottom-color,
+    $opacity: false
+) {
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#ffffff', endColorstr='#000000', GradientType=0); /* IE6-9 */
+    background: -moz-linear-gradient(top, rgba($top-color, $opacity) 0%, rgba($bottom-color, $opacity) 100%); /* FF3.6-15 */
+    background: -webkit-linear-gradient(top, rgba($top-color, $opacity) 0%, rgba($bottom-color, $opacity) 100%); /* Chrome10-25,Safari5.1-6 */
+    background: linear-gradient(to bottom, rgba($top-color, $opacity) 0%, rgba($bottom-color, $opacity) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#{ie-hex-str(rgba($top-color, $opacity))}', endColorstr='#{ie-hex-str(rgba($bottom-color, $opacity))}', GradientType=0); /* IE6-9 */
+}
+
+//^^^
+// Usage: @include linear-gradient(#000, #fff);
+//^^^
+
+
+//********** linear gradient mixin Text shadow mixin
+@mixin text-shadow( $color, $darken: false ) {
+    @if $darken {
+        $darken: $darken;
+    } @else {
+        $darken: 20%;
+    }
+    text-shadow: 0 0 7px darken($color, $darken);
+}
+
+// =============================================================================
+// Font Face
+// =============================================================================
+
+@mixin font-face($name, $path, $weight: null, $style: null, $exts: eot woff2 woff ttf svg, $display: swap) {
+    $src: null;
+
+    $extmods: (
+            eot: "?",
+            svg: "#" + fn.str-replace($name, " ", "_")
+    );
+
+    $formats: (
+            otf: "opentype",
+            ttf: "truetype"
+    );
+
+    @each $ext in $exts {
+        $extmod: if(map.has-key($extmods, $ext), $ext + map.get($extmods, $ext), $ext);
+        $format: if(map.has-key($formats, $ext), map.get($formats, $ext), $ext);
+        $file: string.quote($path + "." + $extmod);
+        $src: list.append($src, url($file) format(string.quote($format)), comma);
+    }
+
+    @font-face {
+        font-family: string.quote($name);
+        font-style: $style;
+        font-weight: $weight;
+        font-display: $display;
+        src: $src;
+    }
+}
+
+// =============================================================================
+// Reusable
+// =============================================================================
+
+@mixin headings-typography($typography, $rfs: false) {
+    @for $i from 1 through 6 {
+        h#{$i} {
+            @if $rfs {
+                @include generate-rfs-properties-from($typography, h-#{$i});
+            } @else {
+                @include generate-properties-from($typography, h-#{$i});
+            }
+        }
+    }
+}
+
+// =============================================================================
+// Breakpoints
+// =============================================================================
+
+@mixin breakpoint-min($bp) {
+    @media (min-width: $bp) {
+        @content;
+    }
+}
+
+@mixin breakpoint-max($bp) {
+    @media (max-width: $bp) {
+        @content;
+    }
+}
+
+@mixin breakpoint-min-max($bp1, $bp2) {
+    @media (min-width: $bp1) and (max-width: $bp2) {
+        @content;
+    }
+}
+
+@mixin breakpoint-greater-than($bp) {
+    @media (min-width: $bp+1) {
+        @content;
+    }
+}
+
+@mixin breakpoint-less-than($bp) {
+    @media (max-width: #{$bp - 1}) {
+        @content;
+    }
+}
+
+@function sub-map-get($map, $key1, $key2) {
+    @return map.get(map-get($map, $key1), $key2);
+}

@@ -1,13 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './app/App';
-// import reportWebVitals from './reportWebVitals';
-// import { REACT_APP_API_URL } from './env.js';
-// import { config } from '../../config/config.js';
+import reportWebVitals from './app/reportWebVitals';
 
-import './styles/index.scss';
-import { BrowserRouter } from 'react-router-dom';
-import { QueryClient, QueryClientProvider } from 'react-query';
+// import './styles/index.scss';
+import {BrowserRouter} from 'react-router-dom';
+import {QueryClient, QueryClientProvider} from 'react-query';
 
 const queryClient = new QueryClient();
 
@@ -22,4 +20,4 @@ root.render(
     </React.StrictMode>
 );
 
-// reportWebVitals();
+reportWebVitals();
