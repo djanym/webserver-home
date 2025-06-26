@@ -1,0 +1,74 @@
+{
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2020,
+    "ecmaFeatures": {
+      "jsx": true,
+      "modules": true
+    },
+    "jquery": true,
+    "Masonry": true
+  },
+  "env": {
+    "browser": true,
+    "commonjs": true,
+    "es2020": true,
+    "jquery": true
+  },
+  "globals": {
+    "ajax_url": true,
+    "InfiniteScroll": "readonly",
+    "imagesLoaded": "readonly",
+    "Masonry": "readonly"
+  },
+  "plugins": [
+    "react"
+  ],
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "prettier"
+  ],
+  "rules": {
+    "react/jsx-indent": [
+      "error",
+      4
+    ],
+    "react/react-in-jsx-scope": "off",
+    "react/jsx-uses-react": "off",
+    //    "prefer-const": "off",
+    //    "camelcase": "off",
+    "no-unused-vars": [
+      "warn",
+      {
+        "vars": "all",
+        "args": "after-used",
+        "ignoreRestSiblings": false
+      }
+    ],
+    "jsdoc/check-line-alignment": 0,
+    "jsx-a11y/img-redundant-alt": 0,
+    "indent": [
+      "error",
+      4
+    ],
+    "quotes": [
+      "error",
+      "single"
+    ]
+    "prettier/prettier": [
+      "error",
+      {
+        "arrowParens": "avoid",
+        "jsxSingleQuote": false,
+        "quoteProps": "consistent",
+        "semi": true,
+        "singleQuote": true,
+        "tabWidth": 4,
+        "useTabs": false,
+        "trailingComma": "none",
+        "bracketSpacing": false
+      }
+    ]
+  }
+}

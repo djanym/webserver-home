@@ -25,8 +25,8 @@ const Listing = () => {
         <Container>
             <h1>File List</h1>
             <ListGroup>
-                {data.map((item, index) => (
-                    <ListGroup.Item key={index}>{item}</ListGroup.Item>
+                {data.files.map((item, index) => (
+                    <ListGroup.Item key={index}>{item.name}</ListGroup.Item>
                 ))}
             </ListGroup>
         </Container>
