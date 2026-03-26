@@ -1,0 +1,100 @@
+// ============================================================================
+// Layout
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// Container
+// ----------------------------------------------------------------------------
+
+.container {
+    width: 100%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+// ----------------------------------------------------------------------------
+// App Structure
+// ----------------------------------------------------------------------------
+
+.app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #f3f4f6;
+}
+
+.app-header {
+    background-color: #fff;
+    border-bottom: 1px solid #e5e7eb;
+    padding: 1rem 0;
+
+    .container {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+}
+
+.app-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #111827;
+    margin: 0;
+}
+
+.app-main {
+    flex: 1;
+    padding: 2rem 0;
+}
+
+// ----------------------------------------------------------------------------
+// Section
+// ----------------------------------------------------------------------------
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 1rem;
+}
+
+// ----------------------------------------------------------------------------
+// Empty State
+// ----------------------------------------------------------------------------
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background-color: #fff;
+    border: 2px dashed #d1d5db;
+    border-radius: 0.5rem;
+
+    p {
+        color: #6b7280;
+        font-size: 1rem;
+        margin: 0;
+    }
+}
+
+// ----------------------------------------------------------------------------
+// Loading & Error States
+// ----------------------------------------------------------------------------
+
+.loading {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #6b7280;
+    font-size: 1rem;
+}
+
+.error {
+    text-align: center;
+    padding: 2rem;
+    color: #dc2626;
+    background-color: #fee2e2;
+    border: 1px solid #fecaca;
+    border-radius: 0.5rem;
+}
