@@ -1,11 +1,11 @@
 {
-    "require": {
-        "ext-json": "*",
-        "altorouter/altorouter": "^2.0"
-    },
-    "require-dev": {
-        "roave/security-advisories": "dev-latest"
-    },
-    "minimum-stability": "dev",
-    "prefer-stable": true
+  "require": {
+    "altorouter/altorouter": "^2.0",
+    "ext-mbstring": "*"
+  },
+  "require-dev": {
+    "roave/security-advisories": "dev-latest"
+  },
+  "minimum-stability": "dev",
+  "prefer-stable": true
 }

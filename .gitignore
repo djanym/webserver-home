@@ -1,8 +1,9 @@
 .idea/
 config.php
+frontend-public/assets
 
 # dependencies
-/node_modules
+node_modules/
 /.pnp
 .pnp.js
 

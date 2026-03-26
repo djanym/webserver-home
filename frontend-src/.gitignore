@@ -1,0 +1,12 @@
+# User specific & automatically generated files #
+#################################################
+node_modules/
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+
+# Theme files
+assets/css/
+assets/js/build

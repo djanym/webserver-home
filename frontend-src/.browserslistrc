@@ -1,9 +1,10 @@
-[production]
->0.2%
+>= 0.5%
+last 2 major versions
 not dead
-not op_mini all
-
-[development]
-last 1 chrome version
-last 1 firefox version
-last 1 safari version
+Edge >= 19
+Chrome >= 72
+Firefox >= 65
+Firefox ESR
+iOS >= 12
+Safari >= 12
+not Explorer <= 11
