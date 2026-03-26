@@ -1,4 +1,6 @@
-Future Features (Planned)
+check guidelines.md and code-style.md.
+then create project listing with the add project form. including template, styles, frontend part and backend. the initial code already exists. so anallyze first it, then add yours.
+don't add backend functionality. only required routes, classes, functions, and placeholders as response.
 
 These features may be implemented later:
 •	Project export

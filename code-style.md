@@ -1,286 +1,142 @@
-Code Style & Structure Rules
+# Code Style — LLM Agent Rules
 
-This document defines coding standards, architecture rules, and constraints for the Webserver Home Manager project.
-The LLM agent must follow these rules when generating or modifying code.
+## General
 
+- Write minimal, clean, readable code
+- Prefer simple solutions
+- Avoid over-engineering
+- Avoid duplicated logic
+- Keep functions small and single-purpose
+- Use consistent naming
+- Avoid unnecessary dependencies
 
-⸻
+---
 
-2. General Code Style
+## Backend (PHP)
 
-Principles
-•	Write clean, minimal, readable code
-•	Prefer simple solutions over complex abstractions
-•	Keep files small and focused
-•	Keep functions short and single-purpose
-•	Use consistent naming conventions
-•	Use predictable file structure
-•	Avoid unnecessary abstractions
-•	Avoid over-engineering
+- PHP 8.3
+- Backend root: `/backend`
+- Backend is API only
+- Follow PSR-12
+- Return JSON only
+- Validate and sanitize all inputs
 
-⸻
+### Routing
 
-3. Backend Rules (PHP)
+- Use AltoRouter
+- Routes file: `/backend/routes.php`
+- No business logic in routes
 
-Backend Structure
-•	Backend root folder: /backend
-•	Backend must be fully independent
-•	Backend must function without frontend dependency
-•	Backend acts strictly as API
+### Structure
 
-Routing
-•	Routing handled via AltoRouter
-•	Routes defined in:
+- Feature-based classes
+- One responsibility per class
+- Keep controllers thin
+- Business logic in classes
+- Classes must be placed in: `/backend/inc`
 
-/backend/routes.php
+### Config
 
-Rules:
-•	All routes must be added to routes.php
-•	Keep route files clean
-•	No business logic inside routes
+- Config folder: `/backend/config`
+- Use environment variables
+- No hardcoded values outside config
 
-Architecture
-•	No strict MVC required
-•	Prefer feature-based classes
-•	Each functionality should be separated into its own class
+---
 
-Backend Rules
-•	Follow PSR-12
-•	Return JSON only
-•	Use consistent response structure
-•	Validate all inputs
-•	Sanitize all inputs
-•	Avoid duplicated logic
-•	Keep controllers thin
-•	Keep business logic in classes
+## API Response Format
 
-Configuration
+Success:
 
-Configuration folder:
+```json
+{
+  "success": true,
+  "data": {},
+  "message": ""
+}
 
-/backend/config
+Error:
 
-Rules:
-•	Use environment variables
-•	Avoid hardcoded values outside configuration files.
-•	Keep config readable
-•	Keep config modular
+{
+  "success": false,
+  "error": "message"
+}
+```
 
 ⸻
 
-4. Frontend Rules
+# Frontend
+	•	SPA only
+	•	No page reloads
+	•	Use AJAX / Fetch
+	•	Communicate with backend API only
 
-Architecture
-•	Frontend must work as Single Page Application (SPA)
-•	No page reloads
-•	Use AJAX / Fetch for API calls
-•	Frontend communicates with backend API only
-
-Frontend Folder
-
-Public frontend:
-
+## Folders:
+```
+/frontend-src
 /frontend-public
-
-Source files:
-
-/frontend-src
-
+```
 
 ⸻
 
-JavaScript Rules
-•	Use modular JavaScript
-•	Keep modules small
-•	Avoid global scope pollution
-•	Keep logic simple
-•	Avoid unnecessary dependencies
-
-Allowed:
-•	Vanilla JS
-•	jQuery
-•	Lightweight React
+# JavaScript
+	•	Use modular JS
+	•	Avoid globals
+	•	Keep modules small
+	•	Vanilla JS preferred
+	•	jQuery allowed
+	•	React allowed (lightweight only)
 
 ⸻
 
-React Rules
-
-React may be used only if simple and lightweight
-
-Rules:
-•	No heavy React architecture
-•	No complex folder structure
-•	No Redux
-•	No heavy state managers
-•	No large UI frameworks
-
-Allowed Structure Example:
-
-/frontend-src
-/components
-/templates
-app.js
-
-Guidelines:
-•	Keep components small
-•	Use functional components
-•	Avoid complex abstraction
-•	Avoid over-componentization
+# React (Optional)
+	•	Functional components only
+	•	No Redux
+	•	No heavy frameworks
+	•	Minimal structure
 
 ⸻
 
-5. CSS / Styling Rules
-
-CSS Architecture
-•	Use SCSS
-•	Do not write styles directly in production files
-
-Source:
-
-/frontend-src
-
-Compiled output:
-
-/frontend-public
-
-Build system:
-•	gulpfile.mjs
-•	Babel
+# CSS
+	•	Use SCSS only
+	•	No inline styles
+	•	Avoid deep nesting
 
 ⸻
 
-Styling Guidelines
-•	Use semantic class names
-•	Keep selectors shallow
-•	Avoid deep nesting
-•	Prefer reusable styles
-•	Prefer component-based styles
-•	Avoid inline styles
-•	Keep CSS readable
+# Build
+	•	Use gulpfile.mjs
+	•	SCSS → CSS
+	•	JS bundling
+	•	Image copy
+	•	Watch changes
 
 ⸻
 
-6. Build System
-
-Build Tools:
-•	Gulp
-•	Babel
-•	SCSS Compiler
-
-Build Tasks:
-•	Compile SCSS → CSS
-•	Compile JS → JS bundle
-•	Optimize images
-•	Copy assets
-
-Files:
-
-gulpfile.mjs
-
+# Comments
+	•	Comment why, not what
+	•	Use // comments
+	•	Use PHPDoc for classes/methods only
+	•	File header required
+	•	End comments with dot.
 
 ⸻
 
-7. Project Structure Rules
-
-General Rules
-•	Organize by feature
-•	Keep responsibilities separated
-•	Keep backend and frontend independent
-•	Use consistent naming
-
-Example:
+# Structure
 
 /backend
-/frontend-public
+/backend/inc
+/backend/config
 /frontend-src
+/frontend-public
 
 
 ⸻
 
-8. Comments & Documentation
-
-Rules:
-•	Comment why, not what
-•	Avoid obvious comments
-•	Keep comments short
-•	Keep documentation practical
-
-Good:
-
-// Avoid duplicate domain creation
-
-Bad:
-
-// increment i
-$i++;
-
-
-⸻
-
-9. API Response Rules
-
-Backend must return consistent JSON:
-
-Example:
-
-{
-"success": true,
-"data": {},
-"message": ""
-}
-
-Error Example:
-
-{
-"success": false,
-"error": "Project not found"
-}
-
-
-⸻
-
-10. Output Expectations
+# Output Requirements
 
 Generated code must be:
-•	Production-ready
-•	Clean and readable
-•	Easy to maintain
-•	Easy to extend
-•	Minimal and efficient
+	•	Production-ready
+	•	Minimal
+	•	Maintainable
+	•	Extendable
 
-⸻
-
-11. Additional Technical Constraints
-    •	Avoid heavy dependencies
-    •	Avoid complex build systems
-    •	Avoid unnecessary libraries
-    •	Prefer native browser APIs
-
-⸻
-
-12. Project Data
-
-Project-specific data stored in:
-
-project-config.php
-
-Server-level data stored in:
-
-server-config.php
-
-No database required.
-
-Database usage is optional only for future features.
-
-⸻
-
-13. Summary for LLM Agent
-
-Always:
-•	Follow config-driven architecture
-•	Keep frontend lightweight
-•	Keep backend API-based
-•	Avoid complexity
-•	Maintain clean structure
-•	Keep code modular
-•	Keep code simple
