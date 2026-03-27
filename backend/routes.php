@@ -6,15 +6,7 @@
 use WebserverHome\ProjectManager;
 use WebserverHome\ApacheManager;
 
-// @todo: handle 404.
-
 $router = new AltoRouter();
-
-header('Content-Type: text/json; charset=utf-8');
-
-// Load required classes.
-require_once ABSPATH . '/inc/ProjectManager.php';
-require_once ABSPATH . '/inc/ApacheManager.php';
 
 // ============================================================================
 // Root Route
@@ -50,11 +42,11 @@ $router->map(
 );
 
 /**
- * GET /projects/[i:id] - Get a single project.
+ * GET /projects/[a:id] - Get a single project.
  */
 $router->map(
     'GET',
-    '/projects/[i:id]',
+    '/projects/[a:id]',
     static function ($id) {
         $manager = new ProjectManager();
         $project = $manager->getProject($id);
@@ -94,11 +86,11 @@ $router->map(
 );
 
 /**
- * PUT /projects/[i:id] - Update a project.
+ * PUT /projects/[a:id] - Update a project.
  */
 $router->map(
     'PUT',
-    '/projects/[i:id]',
+    '/projects/[a:id]',
     static function ($id) {
         $manager = new ProjectManager();
 
@@ -119,11 +111,11 @@ $router->map(
 );
 
 /**
- * DELETE /projects/[i:id] - Delete a project.
+ * DELETE /projects/[a:id] - Delete a project.
  */
 $router->map(
     'DELETE',
-    '/projects/[i:id]',
+    '/projects/[a:id]',
     static function ($id) {
         $manager = new ProjectManager();
 
@@ -133,7 +125,7 @@ $router->map(
 
         $manager->deleteProject($id);
 
-        send_json_success(['message' => 'Project deleted successfully.']);
+        send_json_success('Project deleted successfully.');
     }
 );
 
@@ -152,7 +144,7 @@ $router->map(
         $success = $apache->restartApache();
 
         if ($success) {
-            send_json_success(['message' => 'Apache restarted successfully.']);
+            send_json_success('Apache restarted successfully.');
         } else {
             send_json_error('Failed to restart Apache.', 500);
         }

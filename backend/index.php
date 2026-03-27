@@ -1,3 +1,7 @@
 <?php
+/**
+ * Backend entry point for Webserver Home Manager.
+ */
 
-echo 'Welcome to the backend API!';
+require __DIR__ . '/api.php';
+

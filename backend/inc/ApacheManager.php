@@ -33,9 +33,9 @@ class ApacheManager
      */
     public function __construct()
     {
-        // @todo: Load paths from configuration.
-        $this->apacheConfigPath = '/opt/homebrew/etc/httpd';
-        $this->vhostsPath = '/opt/homebrew/etc/httpd/extra/vhosts';
+        $paths = config('paths', []);
+        $this->apacheConfigPath = $paths['apache_config_dir'] ?? '/opt/homebrew/etc/httpd';
+        $this->vhostsPath = $paths['apache_vhosts_dir'] ?? '/opt/homebrew/etc/httpd/extra/vhosts';
     }
 
     /**

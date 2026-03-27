@@ -4,20 +4,35 @@
 
 import React from 'react';
 
+const formatDate = (iso) => {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+    });
+};
+
 const ProjectCard = ({ project }) => {
-    const { id, name, domain, status, path, created_at } = project;
+    const { id, title, domain, status, path, client_name, created_at } = project;
 
     const statusClass = status === 'active' ? 'status-active' : 'status-inactive';
 
     return (
         <div className="project-card" data-project-id={id}>
             <div className="project-card-header">
-                <h3 className="project-name">{name}</h3>
+                <h3 className="project-name">{title}</h3>
                 <span className={`project-status ${statusClass}`}>
                     {status}
                 </span>
             </div>
             <div className="project-card-body">
+                {client_name && (
+                    <div className="project-field">
+                        <span className="field-label">Client:</span>
+                        <span className="field-value">{client_name}</span>
+                    </div>
+                )}
                 <div className="project-field">
                     <span className="field-label">Domain:</span>
                     <a
@@ -35,7 +50,7 @@ const ProjectCard = ({ project }) => {
                 </div>
                 <div className="project-field">
                     <span className="field-label">Created:</span>
-                    <span className="field-value">{created_at}</span>
+                    <span className="field-value">{formatDate(created_at)}</span>
                 </div>
             </div>
             <div className="project-card-footer">

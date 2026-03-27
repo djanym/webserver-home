@@ -35,17 +35,17 @@ const paths = {
         fonts: '../frontend-public/assets/fonts/'
     },
     src: {
-        js: ['./js/*.js', '!./src/js/appEntry.js'],
+        js:    ['./js/*.js', '!./js/appEntry.js'],
         appJs: './js/appEntry.js',
         css: './scss/*.scss',
         images: './images/**/*',
         fonts: './fonts/*'
     },
     watch: {
-        js: ['./src/js/**/*.js', './src/js/**/*.jsx'],
-        css: ['./src/scss/*.scss', './src/scss/**/*.scss'],
-        images: './src/images/**/*',
-        fonts: './src/fonts/*'
+        js:     ['./js/**/*.js', './js/**/*.jsx'],
+        css:    ['./scss/*.scss', './scss/**/*.scss'],
+        images: './images/**/*',
+        fonts:  './fonts/*'
     },
     minify: {
         // CHANGED: Updated minify paths to match new output structure

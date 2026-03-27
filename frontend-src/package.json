@@ -5,35 +5,29 @@
         "@babel/core": "^7.29.0",
         "@babel/preset-env": "^7.29.2",
         "@babel/preset-react": "^7.28.5",
-        "@tanstack/react-query": "^5.95.2",
         "autoprefixer": "^10.4.27",
         "babel-loader": "^10.1.1",
         "bundle-stats": "^4.22.0",
         "bundle-stats-webpack-plugin": "^4.22.0",
         "del": "^8.0.1",
+        "depcheck": "^1.4.7",
         "eslint": "^10.1.0",
-        "eslint-config-react-app": "^7.0.1",
         "gulp": "^5.0.1",
         "gulp-autoprefixer": "^10.0.0",
         "gulp-clean-css": "^4.3.0",
+        "gulp-if": "^3.0.0",
         "gulp-plumber": "^1.2.1",
         "gulp-postcss": "^10.0.0",
         "gulp-rename": "^2.1.0",
         "gulp-rigger": "^0.5.8",
         "gulp-sass": "^6.0.1",
         "gulp-sourcemaps": "^3.0.0",
-        "postcss-loader": "^8.2.1",
-        "prettier": "^3.8.1",
+        "postcss-sort-media-queries": "^6.3.3",
         "react": "^19.2.4",
         "react-dom": "^19.2.4",
-        "react-router-dom": "^7.13.2",
         "react-scripts": "^5.0.1",
         "sass": "^1.98.0",
-        "web-vitals": "^5.2.0",
         "webpack": "^5.105.4",
-        "webpack-cli": "^7.0.2",
-        "gulp-if": "^3.0.0",
-        "postcss-sort-media-queries": "^6.3.3",
         "yargs": "^18.0.0"
     },
     "scripts": {
@@ -48,9 +42,5 @@
         "build:webpack:watch": "webpack --watch --mode=development",
         "start:gulp:all": "gulp runAll",
         "build:gulp:all": "gulp runAll --prod"
-    },
-    "dependencies": {
-        "react-query": "^3.39.3",
-        "webpack-stream": "^7.0.0"
     }
 }

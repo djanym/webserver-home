@@ -34,7 +34,7 @@ class ProjectManager
     public function __construct()
     {
         $this->serverRoot = config('home_path', dirname(__DIR__, 2));
-        $this->configPath = $this->serverRoot . '/server-config.php';
+        $this->configPath = ABSPATH . '/config/projects.meta.json';
     }
 
     /**
@@ -124,16 +124,22 @@ class ProjectManager
     {
         $errors = [];
 
-        if (empty($data['name'])) {
-            $errors['name'] = 'Project name is required.';
+        if (empty($data['title'])) {
+            $errors['title'] = 'Project title is required.';
+        }
+
+        if (empty($data['slug'])) {
+            $errors['slug'] = 'Project slug is required.';
+        } elseif (!preg_match('/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $data['slug'])) {
+            $errors['slug'] = 'Slug may only contain lowercase letters, numbers, and hyphens.';
         }
 
         if (empty($data['domain'])) {
-            $errors['domain'] = 'Domain is required.';
+            $errors['domain'] = 'Virtual domain name is required.';
         }
 
-        if (empty($data['folder_name'])) {
-            $errors['folder_name'] = 'Folder name is required.';
+        if (empty($data['client_name'])) {
+            $errors['client_name'] = 'Client name is required.';
         }
 
         return $errors;

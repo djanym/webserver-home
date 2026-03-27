@@ -25,10 +25,10 @@ function config($key, $default = null)
     return $app_config[$key] ?? $default;
 }
 
-function user_can($action): true
+function user_can($action): bool
 {
-    // Placeholder for future role/permission logic
-    // For now, always allow
+    // Placeholder for future role/permission logic.
+    // For now, always allow.
     return true;
 }
 
@@ -308,7 +308,7 @@ function send_json_error($data = null, $status_code = 400)
 
     if (isset($data)) {
         if (is_string($data)) {
-            $response['message'] = $data;
+            $response['error'] = $data;
         } else {
             $response['data'] = $data;
         }
@@ -393,7 +393,7 @@ function get_listing_data($dir = false)
                 'full_path' => $entry_path,
                 'name' => $entry,
             );
-        } elseif (is_dir($entry_path) && $entry !== '_old-projects_') {
+        } elseif (is_dir($entry_path) && !in_array($entry, $ignore_files, true)) {
             $dirs[$entry] = array(
                 'relative_path' => trim($relative_path . '/' . $entry, '/'),
                 'full_path' => $entry_path,
