@@ -30,16 +30,17 @@ const isDevelopment = !argv.prod;
 const paths = {
     dst: {
         js: '../frontend-public/assets/js/',
+        appJs: '../frontend-public/assets/js/build/',
         css: '../frontend-public/assets/css/',
         images: '../frontend-public/assets/images/',
         fonts: '../frontend-public/assets/fonts/'
     },
     src: {
         js:    ['./js/*.js', '!./js/appEntry.js'],
-        appJs: './js/appEntry.js',
+        appJs: './js/app/appEntry.js',
         css: './scss/*.scss',
         images: './images/**/*',
-        fonts: './fonts/*'
+        fonts: ['./fonts/*', './fonts/**/*']
     },
     watch: {
         js:     ['./js/**/*.js', './js/**/*.jsx'],
@@ -55,6 +56,7 @@ const paths = {
     },
     clean: {
         js: '../frontend-public/assets/js/*',
+        buildJs: '../frontend-public/assets/js/build/*',
         css: '../frontend-public/assets/css/*',
         images: '../frontend-public/assets/images/*',
         fonts: '../frontend-public/assets/fonts/*'
@@ -68,7 +70,8 @@ function cleanCSS() {
 }
 
 function cleanJS() {
-    return deleteAsync([paths.clean.js], {force: true});
+    // return deleteAsync([paths.clean.js], {force: true});
+    return deleteAsync([paths.clean.buildJs], {force: true});
 }
 
 function cleanImages() {
@@ -162,7 +165,7 @@ function buildCSS() {
 
 function buildJS() {
     return (
-        src(paths.src.js)
+        src(paths.src.appJs)
             .pipe(
                 plumber({
                     errorHandler: function (err) {
@@ -199,7 +202,7 @@ function buildJS() {
                 })
             )
             // Save compressed version
-            .pipe(dest(paths.dst.js))
+            .pipe(dest(paths.dst.appJs))
     );
 }
 
@@ -207,22 +210,22 @@ function buildJS() {
  * Individual tasks for CSS, JS, and Images
  */
 
-function taskCSS(done) {
+export function taskCSS(done) {
     console.log('🔄 Running CSS tasks...');
     series(cleanCSS, buildCSS)(done);
 }
 
-function taskJS(done) {
+export function taskJS(done) {
     console.log('🔄 Running JS tasks...');
     series(cleanJS, buildJS)(done);
 }
 
-function taskImages(done) {
+export function taskImages(done) {
     console.log('🔄 Running Images tasks...');
     series(cleanImages, buildImages)(done);
 }
 
-function taskFonts(done) {
+export function taskFonts(done) {
     console.log('🔄 Running Fonts tasks...');
     series(cleanFonts, buildFonts)(done);
 }

@@ -1,6 +1,19 @@
 @charset "UTF-8";
 
 @use "sass:math";
+@use "sass:string";
+@use "sass:map";
+@use "sass:list";
+
+@function str-replace($string, $search, $replace: "") {
+    $index: string.index($string, $search);
+
+    @if $index {
+        @return string.slice($string, 1, $index - 1) + $replace + str-replace(string.slice($string, $index + string.length($search)), $search, $replace);
+    }
+
+    @return $string;
+}
 
 // =============================================================================
 // Font Face
@@ -20,13 +33,22 @@
     );
 
     @each $ext in $exts {
-        $extmod: if(map-has-key($extmods, $ext), $ext + map-get($extmods, $ext), $ext);
-        $format: if(map-has-key($formats, $ext), map-get($formats, $ext), $ext);
-        $src: append($src, url(quote($path + "." + $extmod)) format(quote($format)), comma);
+        $extmod: $ext;
+        @if map.has-key($extmods, $ext) {
+            $extmod: $ext + map.get($extmods, $ext);
+        }
+
+        $format: $ext;
+        @if map.has-key($formats, $ext) {
+            $format: map.get($formats, $ext);
+        }
+
+        $url: string.quote($path + "." + $extmod);
+        $src: list.append($src, url($url) format(string.quote($format)), comma);
     }
 
     @font-face {
-        font-family: quote($name);
+        font-family: string.quote($name);
         font-style: $style;
         font-weight: $weight;
         font-display: $display;
@@ -69,5 +91,5 @@
 }
 
 @function sub-map-get($map, $key1, $key2) {
-    @return map-get(map-get($map, $key1), $key2);
+    @return map.get(map.get($map, $key1), $key2);
 }

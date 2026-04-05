@@ -1,0 +1,3 @@
+# Redirect root to index.html
+RewriteEngine On
+RewriteRule ^$ index.html [L]

@@ -42,5 +42,8 @@
         "build:webpack:watch": "webpack --watch --mode=development",
         "start:gulp:all": "gulp runAll",
         "build:gulp:all": "gulp runAll --prod"
+    },
+    "dependencies": {
+        "webpack-stream": "^7.0.0"
     }
 }

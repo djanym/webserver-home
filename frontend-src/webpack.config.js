@@ -10,10 +10,10 @@ const isDevelopment = !argv.prod;
 
 module.exports = {
     mode: isDevelopment ? 'development' : 'production',
-    entry: './js/appEntry.js', // Entry point for React app
+    entry: './js/app/appEntry.js', // Entry point.
     output: {
         filename: 'app-bundle.js',
-        path: path.resolve(__dirname, '../frontend-public/assets/js') // Output directory for bundled JS
+        path: path.resolve(__dirname, '../frontend-public/assets/js/build') // Output directory for bundled JS
     },
     // Resolve configuration for React and JSX
     resolve: {

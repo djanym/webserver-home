@@ -103,15 +103,6 @@ Error:
 
 ⸻
 
-# Build
-	•	Use gulpfile.mjs
-	•	SCSS → CSS
-	•	JS bundling
-	•	Image copy
-	•	Watch changes
-
-⸻
-
 # Comments
 	•	Comment why, not what
 	•	Use // comments
