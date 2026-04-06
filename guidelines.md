@@ -223,7 +223,8 @@ React Rules:
 ## Frontend Module Rules
 
 - Keep the shared request/response wrapper in `/frontend-src/js/app/services/api.js`
-- Put module API helpers in `/frontend-src/js/app/modules/{module-name}/{module-name}-api.js`
+- Put module API helpers in `/frontend-src/js/app/modules/{module-name}/{module-name}-api.js`.
+- Api functions should be named `api{ActionName}`
 - Module API helpers should expose `(apiRoute, data, method = 'POST')`-style wrappers
 - Put module UI entry in `/frontend-src/js/app/modules/{module-name}/{module-name}.js`
 - Keep module components inside the module folder

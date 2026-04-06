@@ -1,5 +1,6 @@
 /**
  * Shared app shell with global header/main/footer layout.
+ * Mostly used for the main app container. So should not be used for module-based features.
  */
 
 import React from 'react';

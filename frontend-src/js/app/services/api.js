@@ -93,21 +93,3 @@ export const apiRequest = async (apiRoute, data = null, method = 'GET', options 
 
     return payload;
 };
-
-/**
- * Backward-compatible API helpers. Prefer module-specific API files.
- */
-export const fetchProjects = async () => {
-    const data = await apiRequest('projects');
-    return data.data;
-};
-
-export const createProject = async (projectData) => {
-    const data = await apiRequest('projects', projectData, 'POST');
-    return data.data?.project || data.data;
-};
-
-export const deleteProject = async (projectId) => {
-    const data = await apiRequest(`projects/${projectId}`, null, 'DELETE');
-    return data.data;
-};

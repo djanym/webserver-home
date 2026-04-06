@@ -7,6 +7,8 @@ const ABSPATH = __DIR__;
 include ABSPATH . '/vendor/autoload.php';
 include ABSPATH . '/inc/functions.php';
 load_config();
+include ABSPATH . '/modules/projects-manager/projects-manager.php';
+
 include ABSPATH . '/routes.php';
 
 // End clock time in seconds.
