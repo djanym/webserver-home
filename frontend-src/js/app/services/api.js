@@ -2,89 +2,112 @@
  * API service for communicating with the backend.
  */
 
-// Initialize API base URL.
 let API_BASE_URL;
+let apiConfigPromise;
+
+const renderConfigError = (message) => {
+    document.body.innerHTML = `<div style="padding: 2rem; text-align: center; color: #dc2626;"><h1>Configuration Error</h1><p>${message}</p></div>`;
+};
 
 /**
  * Loads application configuration data from the config file.
  */
 const loadConfig = async () => {
-    // const response = await fetch('../../../app-config.json');
     const response = await fetch('app-public-config.json');
-    return await response.json();
+    return response.json();
 };
 
-loadConfig().then(config => {
-    if (!config.apiBaseUrl) {
-        console.error('FATAL: apiBaseUrl is not configured in app-config.json');
-        document.body.innerHTML = '<div style="padding: 2rem; text-align: center; color: #dc2626;"><h1>Configuration Error</h1><p>API Base URL is not configured. Please check app-config.json.</p></div>';
-        throw new Error('apiBaseUrl is required in configuration');
+const initApiConfig = async () => {
+    if (API_BASE_URL) {
+        return API_BASE_URL;
     }
-    API_BASE_URL = config.apiBaseUrl;
-}).catch((error) => {
-    console.error('FATAL: Failed to load configuration or apiBaseUrl is missing', error);
-    document.body.innerHTML = '<div style="padding: 2rem; text-align: center; color: #dc2626;"><h1>Configuration Error</h1><p>Failed to load configuration or API Base URL is missing.</p></div>';
-    throw error;
-});
+
+    if (!apiConfigPromise) {
+        apiConfigPromise = loadConfig()
+            .then((config) => {
+                if (!config.apiBaseUrl) {
+                    throw new Error('API Base URL is not configured. Please check app-public-config.json.');
+                }
+
+                API_BASE_URL = String(config.apiBaseUrl).replace(/\/+$/, '');
+                return API_BASE_URL;
+            })
+            .catch((error) => {
+                console.error('FATAL: Failed to load configuration or apiBaseUrl is missing', error);
+                renderConfigError(error.message || 'Failed to load configuration or API Base URL is missing.');
+                throw error;
+            });
+    }
+
+    return apiConfigPromise;
+};
+
+const resolveApiUrl = (apiRoute) => {
+    const normalizedRoute = String(apiRoute || '').replace(/^\/+/, '');
+    return `${API_BASE_URL}/${normalizedRoute}`;
+};
 
 /**
- * Shared fetch wrapper with response.ok check.
+ * Shared fetch wrapper with strict response handling.
  *
- * @param {string} api_route
+ * @param {string} apiRoute
+ * @param {Object|null} data
+ * @param {string} method
  * @param {RequestInit} options
  * @returns {Promise<Object>}
  */
-const apiFetch = async (api_route, options = {}) => {
-    const url = `${API_BASE_URL}/${api_route}`;
-    const response = await fetch(url, options);
+export const apiRequest = async (apiRoute, data = null, method = 'GET', options = {}) => {
+    await initApiConfig();
+
+    const requestMethod = String(method || 'POST').toUpperCase();
+    const requestOptions = {
+        method: requestMethod,
+        ...options,
+        headers: {
+            ...(requestMethod !== 'GET' ? { 'Content-Type': 'application/json' } : {}),
+            ...(options.headers || {}),
+        },
+    };
+
+    if (data !== null && requestMethod !== 'GET') {
+        requestOptions.body = JSON.stringify(data);
+    }
+
+    const response = await fetch(resolveApiUrl(apiRoute), requestOptions);
+    let payload = null;
+
+    try {
+        payload = await response.json();
+    } catch (error) {
+        payload = null;
+    }
 
     if (!response.ok) {
-        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+        const message = payload?.error || payload?.message || `Server error: ${response.status} ${response.statusText}`;
+        throw new Error(message);
     }
 
-    const data = await response.json();
-
-    if (!data.success) {
-        throw new Error(data.error || data.message || 'Request failed.');
+    if (payload && payload.success === false) {
+        throw new Error(payload.error || payload.message || 'Request failed.');
     }
 
-    return data;
+    return payload;
 };
 
 /**
- * Fetch all projects.
- *
- * @returns {Promise<Object>} Projects data.
+ * Backward-compatible API helpers. Prefer module-specific API files.
  */
 export const fetchProjects = async () => {
-    const data = await apiFetch(`projects`);
+    const data = await apiRequest('projects');
     return data.data;
 };
 
-/**
- * Create a new project.
- *
- * @param {Object} projectData - Project data.
- * @returns {Promise<Object>} Created project.
- */
 export const createProject = async (projectData) => {
-    const data = await apiFetch(`projects`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(projectData),
-    });
-    return data.data;
+    const data = await apiRequest('projects', projectData, 'POST');
+    return data.data?.project || data.data;
 };
 
-/**
- * Delete a project.
- *
- * @param {string} projectId - Project ID.
- * @returns {Promise<Object>} Response data.
- */
 export const deleteProject = async (projectId) => {
-    const data = await apiFetch(`${API_BASE_URL}/projects/${projectId}`, {
-        method: 'DELETE',
-    });
+    const data = await apiRequest(`projects/${projectId}`, null, 'DELETE');
     return data.data;
 };

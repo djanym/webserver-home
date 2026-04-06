@@ -150,6 +150,14 @@ Each project:
 /frontend-src - for js, css, images, and other sources which should be generated and exported to `frontend-public`.
 /frontend-public - public folder. Assets will be generated from frontend-src.
 
+## Module-First Structure
+
+- Backend modules: `/backend/modules/{module-name}`
+- Frontend modules: `/frontend-src/js/app/modules/{module-name}`
+- Each module owns its own routing and feature logic
+- Shared backend classes/utilities stay in `/backend/inc`, `/backend/config`, `/backend/routes.php`
+- Shared frontend request wrapper stays in `/frontend-src/js/app/services/api.js`
+
 ---
 
 # Backend
@@ -164,20 +172,21 @@ Each project:
 ## Routing
 
 - Uses AltoRouter library
-- Routes in:
-
-/backend/routes.php
+- Route bootstrap in `/backend/routes.php`
+- Module route definitions in `/backend/modules/{module-name}/routes.php`
 
 Rules:
 
 - No logic in routes
-- Add routes only in routes.php
+- `backend/routes.php` should only bootstrap and register module routes
+- Module handlers should contain endpoint behavior (for example in `handlers.php`)
 
 ## Architecture
 
 - No strict MVC
 - Feature-based classes
-- Classes should be placed in `inc` folder.
+- Module-specific functionality should live in module folders
+- Shared/common classes may be placed in `inc` folder
 
 ## Config
 
@@ -211,18 +220,19 @@ React Rules:
 - No heavy frameworks
 - No complex state managers
 
+## Frontend Module Rules
+
+- Keep the shared request/response wrapper in `/frontend-src/js/app/services/api.js`
+- Put module API helpers in `/frontend-src/js/app/modules/{module-name}/{module-name}-api.js`
+- Module API helpers should expose `(apiRoute, data, method = 'POST')`-style wrappers
+- Put module UI entry in `/frontend-src/js/app/modules/{module-name}/{module-name}.js`
+- Keep module components inside the module folder
+
 ---
 
 # CSS
 
-## Source
-
-/frontend-src/scss/
-
-## Output
-
-/frontend-public/assets/css/
-
+Source files in `/frontend-src/src/scss/`.
 Rules:
 
 - Use SCSS
@@ -241,7 +251,7 @@ Rules:
 - Babel
 - SCSS
 
-## File
+## Gulp file
 
 frontend-src/gulpfile.mjs - for generating frontend assets.
 
@@ -253,25 +263,22 @@ frontend-src/gulpfile.mjs - for generating frontend assets.
 - Transpile via Babel
 - Bundle via Webpack
 
-Input:
-
-frontend-src/src/js/
-
-Output:
-
-frontend-public/assets/js/
+Source files in `frontend-src/js/app/`.
+Output files in `frontend-public/assets/js/build/`.
+Use `run:gulp:js` npm script to build JS.
 
 ---
 
+### CSS
+
+Source files in `frontend-src/src/scss/`.
+Output files in `frontend-public/assets/css/`.
+Use `run:gulp:css` npm script to build CSS.
+
 ### Images
 
-Copy:
-
-frontend-src/src/images/
-
-To:
-
-frontend-public/assets/images/
+Store images in `frontend-src/src/images/`.
+All images will be copied to `frontend-public/assets/images/` during build.
 
 ---
 

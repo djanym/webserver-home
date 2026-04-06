@@ -31,17 +31,11 @@
         "yargs": "^18.0.0"
     },
     "scripts": {
-        "start:react": "react-scripts start",
-        "build": "react-scripts build",
-        "test": "react-scripts test",
-        "eject": "react-scripts eject",
-        "start-webpack:serve": "webpack serve --config webpack.config.js",
-        "start:webpack:watch": "webpack --watch",
-        "build:webpack": "webpack --mode=development",
-        "build:webpack:production": "webpack --mode=production",
-        "build:webpack:watch": "webpack --watch --mode=development",
         "start:gulp:all": "gulp runAll",
-        "build:gulp:all": "gulp runAll --prod"
+        "build:gulp:all": "gulp runAll --prod",
+        "run:gulp:all": "gulp runAll",
+        "run:gulp:css": "gulp cssTask",
+        "run:gulp:js": "gulp jsTask"
     },
     "dependencies": {
         "webpack-stream": "^7.0.0"

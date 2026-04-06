@@ -1,6 +1,7 @@
 .idea/
 config.php
 frontend-public/assets
+frontend-public/app-public-config.json
 
 # dependencies
 node_modules/
