@@ -1,0 +1,4 @@
+{
+    "appBaseUrl": "https://localhost/webserver-home",
+    "apiBaseUrl": "https://localhost/webserver-home/backend"
+}

@@ -1,5 +1,4 @@
 <?php
-//session_start();
 $app_start_time = microtime(true);
 
 const APP_VERSION = '0.1';

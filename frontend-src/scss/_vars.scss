@@ -1,3 +1,5 @@
+@use "mixins" as mx;
+
 $laptop: 1366px;
 $small-laptop: 1024px;
 $tablet: 850px;
@@ -10,3 +12,7 @@ $enable-wp-core-styles: true;
 
 $font-path: #{'../fonts'};
 
+@include mx.font-face("JetBrainsMono-Regular", $font-path + "/JetBrainsMono-Regular", 400, normal, ttf);
+@include mx.font-face("FiraCode-Regular", $font-path + "/FiraCode-Regular", 400, normal, ttf);
+
+$font-body: 'JetBrainsMono-Regular', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
