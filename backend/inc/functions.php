@@ -1,5 +1,8 @@
 <?php
 
+use JetBrains\PhpStorm\NoReturn;
+use WebserverHome\AppError;
+
 /**
  * Loads configuration files.
  *
@@ -298,7 +301,8 @@ function ws_json_convert_string( string $string ) {
  *                              then print and die.
  * @param int|null $status_code The HTTP status code to output.
  */
-function send_json( mixed $response, int $status_code = null ) {
+#[NoReturn]
+function send_json( mixed $response, int $status_code = null ) : void {
     if ( ! headers_sent() ) {
         header( 'Content-Type: application/json; charset=UTF-8' );
         if ( null !== $status_code ) {
@@ -337,21 +341,24 @@ function send_json_success( mixed $data = null, int $status_code = 200 ) : void 
 /**
  * Send a JSON response back to an Ajax request, indicating failure.
  *
- * @param mixed $data        Data to encode as JSON, then print and die.
- * @param int   $status_code The HTTP status code to output.
+ * @param string|AppError $data        Data to encode as JSON, then print and die.
+ * @param int             $status_code The HTTP status code to output.
  */
 function send_json_error( $data = null, $status_code = 400 ) {
-    $response = array( 'success' => false );
+    $response = [ 'success' => false ];
 
     if ( isset( $data ) ) {
         if ( is_string( $data ) ) {
-            $response['error'] = $data;
-        } else {
-            $response['data'] = $data;
+            $response['error_message'] = $data;
+        } elseif ( is_app_error( $data ) ) {
+            foreach ( $data->getErrorCodes() as $code ) {
+                $response['errors'][ $code ] = $code->getErrorMessage( $code );
+            }
         }
     }
 
     send_json( $response, $status_code );
+    die;
 }
 
 /**
@@ -444,4 +451,35 @@ function get_listing_data( $dir = false ) {
     $data['folders'] = $dirs;
 
     return $data;
+}
+
+function is_app_error( $object ) : bool {
+    return $object instanceof AppError;
+}
+
+/**
+ * Merges user defined arguments into defaults array.
+ * This function is used throughout WordPress to allow for both string or array
+ * to be merged into another array.
+ *
+ * @param object|array|string $args     Value to merge with $defaults.
+ * @param array               $defaults Optional. Array that serves as the defaults.
+ *                                      Default empty array.
+ *
+ * @return array Merged user defined values with defaults.
+ */
+function parse_args( object|array|string $args, array $defaults = array() ) : array {
+    if ( is_object( $args ) ) {
+        $parsed_args = get_object_vars( $args );
+    } elseif ( is_array( $args ) ) {
+        $parsed_args =& $args;
+    } else {
+        parse_str( (string) $args, $parsed_args );
+    }
+
+    if ( is_array( $defaults ) && $defaults ) {
+        return array_merge( $defaults, $parsed_args );
+    }
+
+    return $parsed_args;
 }
