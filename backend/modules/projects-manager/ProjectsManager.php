@@ -48,7 +48,7 @@ class ProjectsManager {
      * Constructor.
      */
     public function __construct() {
-        $this->serverRoot = config( 'home_path', dirname( __DIR__, 2 ) );
+        $this->serverRoot = config( 'path_to_projects_root' );
         $this->configPath = ABSPATH . '/config/projects.meta.json';
     }
 
@@ -82,13 +82,29 @@ class ProjectsManager {
      * @return array Created project data.
      */
     public function createProject( array $data ) : array {
+        $path = $this->serverRoot . '/' . $data['slug'];
+
+        if ( ! empty( $data['custom_path_enabled'] ) ) {
+            if ( $data['path_type'] === 'relative' && ! empty( $data['relative_path'] ) ) {
+                $path = $this->serverRoot . '/' . $data['relative_path'] . '/' . $data['slug'];
+            } elseif ( $data['path_type'] === 'absolute' && ! empty( $data['absolute_path'] ) ) {
+                $path = $data['absolute_path'] . '/' . $data['slug'];
+            }
+        }
+
+        // Normalize path.
+        $path = preg_replace( '#/+#', '/', $path );
+
+        $data['path'] = $path;
+
         // @todo: Implement project creation logic.
         // - Validate input data.
         // - Create project folder structure.
         // - Create project-config.php.
         // - Update server-config.php.
         // - Create virtual host configuration.
-        return [];
+
+        return $data;
     }
 
     /**
@@ -154,6 +170,14 @@ class ProjectsManager {
 
         if ( empty( $data['client_name'] ) ) {
             $errors['client_name'] = 'Client name is required.';
+        }
+
+        if ( ! empty( $data['custom_path_enabled'] ) ) {
+            if ( $data['path_type'] === 'relative' && empty( $data['relative_path'] ) ) {
+                $errors['relative_path'] = 'Relative path is required.';
+            } elseif ( $data['path_type'] === 'absolute' && empty( $data['absolute_path'] ) ) {
+                $errors['absolute_path'] = 'Absolute path is required.';
+            }
         }
 
         return $errors;

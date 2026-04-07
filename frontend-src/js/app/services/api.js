@@ -93,3 +93,18 @@ export const apiRequest = async (apiRoute, data = null, method = 'GET', options 
 
     return payload;
 };
+
+const apiProjectsRequest = (apiRoute = '', data = null, method = 'POST') => {
+    const normalizedRoute = String(apiRoute || '').replace(/^\/+/, '');
+    const route = normalizedRoute ? `projects/${normalizedRoute}` : 'projects';
+
+    return apiRequest(route, data, method);
+};
+
+export const apiFetchBackendConfig = async () => {
+    const normalizedRoute = String(apiRoute || '').replace(/^\/+/, '');
+    const route = normalizedRoute ? `projects/${normalizedRoute}` : 'projects';
+
+    const data = await apiRequest('config', null, 'GET');
+    return data.data?.config || data.data;
+};

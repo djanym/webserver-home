@@ -13,7 +13,7 @@ function wb_projects_manager_get_all_projects() : void {
 }
 
 function wb_projects_manager_get_project( string $id ) : void {
-    $manager = wb_projects_manager_get_manager();
+    $manager = ProjectsManager::get_instance();
     $project = $manager->getProject( $id );
 
     if ( ! $project ) {
@@ -30,7 +30,7 @@ function wb_projects_manager_create_project() : void {
         send_json_error( 'Invalid request data.', 400 );
     }
 
-    $manager = wb_projects_manager_get_manager();
+    $manager = ProjectsManager::get_instance();
     $errors  = $manager->validateProjectData( $input );
 
     if ( ! empty( $errors ) ) {
@@ -42,7 +42,7 @@ function wb_projects_manager_create_project() : void {
 }
 
 function wb_projects_manager_update_project( string $id ) : void {
-    $manager = wb_projects_manager_get_manager();
+    $manager = ProjectsManager::get_instance();
 
     if ( ! $manager->projectExists( $id ) ) {
         send_json_error( 'Project not found.', 404 );
@@ -59,7 +59,7 @@ function wb_projects_manager_update_project( string $id ) : void {
 }
 
 function wb_projects_manager_delete_project( string $id ) : void {
-    $manager = wb_projects_manager_get_manager();
+    $manager = ProjectsManager::get_instance();
 
     if ( ! $manager->projectExists( $id ) ) {
         send_json_error( 'Project not found.', 404 );

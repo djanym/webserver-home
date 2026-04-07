@@ -403,10 +403,10 @@ function get_listing_data( $dir = false ) {
     ];
     $files        = $dirs = [];
     if ( ! $dir ) {
-        $current_path  = config( 'home_path' );
+        $current_path  = config( 'path_to_projects_root' );
         $relative_path = null;
     } else {
-        $current_path  = config( 'home_path' ) . '/' . $dir;
+        $current_path  = config( 'path_to_projects_root' ) . '/' . $dir;
         $relative_path = $dir;
     }
 

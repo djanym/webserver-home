@@ -34,8 +34,8 @@
         "start:gulp:all": "gulp runAll",
         "build:gulp:all": "gulp runAll --prod",
         "run:gulp:all": "gulp runAll",
-        "run:gulp:css": "gulp cssTask",
-        "run:gulp:js": "gulp jsTask"
+        "run:gulp:css": "gulp taskCSS",
+        "run:gulp:js": "gulp taskJS"
     },
     "dependencies": {
         "webpack-stream": "^7.0.0"
