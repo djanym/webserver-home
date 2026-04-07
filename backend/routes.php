@@ -7,7 +7,8 @@ $router = new AltoRouter();
 
 $router->map( 'GET', '/', static fn() => send_json_success( 'Welcome to the API! Please use the endpoints provided.' )
 );
-$router->map( 'GET', '/config', static fn() => AppShared::getPublicBackendConfig() );
+
+$router->map( 'GET', '/public-config', static fn() => AppShared::getPublicBackendConfig() );
 
 // Checks all modules for routes.php files and registers them.
 $moduleRouteFiles = glob( ABSPATH . '/modules/*/routes.php' ) ? : [];

@@ -102,9 +102,6 @@ const apiProjectsRequest = (apiRoute = '', data = null, method = 'POST') => {
 };
 
 export const apiFetchBackendConfig = async () => {
-    const normalizedRoute = String(apiRoute || '').replace(/^\/+/, '');
-    const route = normalizedRoute ? `projects/${normalizedRoute}` : 'projects';
-
-    const data = await apiRequest('config', null, 'GET');
+    const data = await apiRequest('public-config', null, 'GET');
     return data.data?.config || data.data;
 };

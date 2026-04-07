@@ -4,7 +4,7 @@
 
 import React, { useState } from 'react';
 import { apiCreateProject } from '../projects-api';
-import { useProjectsConfig } from '../projects-config-context';
+import { useAppConfig } from '../../../services/config-context';
 
 const slugify = (value) =>
     value
@@ -15,7 +15,7 @@ const slugify = (value) =>
         .replace(/-+/g, '-');
 
 const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
-    const config = useProjectsConfig();
+    const config = useAppConfig();
     const [formData, setFormData] = useState({
         title: '',
         slug: '',

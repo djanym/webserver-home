@@ -7,11 +7,11 @@ import ProjectList from './components/ProjectList';
 import CreateProjectForm from './components/CreateProjectForm';
 import { apiFetchBackendConfig } from '../../services/api';
 import { apiFetchProjects } from './projects-api';
-import { ProjectsConfigContext, projectsConfigDefaultValue } from './projects-config-context';
+import { AppConfigContext, AppConfigDefaultValue } from '../../services/config-context';
 
 const ProjectsModule = ({ setHeaderAction }) => {
     const [projects, setProjects] = useState([]);
-    const [backendConfig, setBackendConfig] = useState(projectsConfigDefaultValue);
+    const [backendConfig, setBackendConfig] = useState(AppConfigDefaultValue);
     const [loadingIndicator, setLoadingIndicator] = useState(true);
     const [error, setError] = useState(null);
     const [isCreateProjectFormOpen, toggleCreateProjectForm] = useState(false);
@@ -25,6 +25,7 @@ const ProjectsModule = ({ setHeaderAction }) => {
             }
         } catch (err) {
             setError('Failed to load backend configuration'); // Show error message.
+            throw err;
         } finally {
             setLoadingIndicator(false);
         }
@@ -39,6 +40,7 @@ const ProjectsModule = ({ setHeaderAction }) => {
             setError(null); // Clear any previous errors.
         } catch (err) {
             setError('Failed to load projects'); // Show error message.
+            throw err;
         } finally {
             setLoadingIndicator(false);
         }
@@ -46,29 +48,37 @@ const ProjectsModule = ({ setHeaderAction }) => {
 
     // Run once when component mounts - load initial projects.
     useEffect(() => {
-        loadBackendConfig().then(r => r).catch(e => console.error(e));
-        loadProjects().then(r => r).catch(e => console.error(e));
+        const init = async () => {
+            try {
+                await loadBackendConfig();
+                await loadProjects();
+            } catch (e) {
+                console.error(e);
+            }
+        };
+
+        init().then(r => r).catch(e => console.error(e)); // Handle any uncaught errors.
     }, []);
-    
+
     // Update header button whenever form visibility changes
     useEffect(() => {
         if (!setHeaderAction) {
             return undefined;
         }
-    
+
         // Set button text and style based on form state
         setHeaderAction({
             label: isCreateProjectFormOpen ? 'Cancel' : 'Add Project',
             className: isCreateProjectFormOpen ? 'btn-secondary' : 'btn-primary',
             onClick: () => toggleCreateProjectForm((prev) => !prev), // Toggle form
         });
-    
+
         // Cleanup: remove button when component unmounts
         return () => {
             setHeaderAction(null);
         };
     }, [setHeaderAction, isCreateProjectFormOpen]);
-    
+
     // Add new project to list and close form
     const handleProjectAdded = (newProject) => {
         setProjects((prev) => [...prev, newProject]); // Add to existing projects
@@ -76,7 +86,7 @@ const ProjectsModule = ({ setHeaderAction }) => {
     };
 
     return (
-        <ProjectsConfigContext.Provider value={backendConfig}>
+        <AppConfigContext.Provider value={backendConfig}>
             <section className="projects-module" aria-label="Projects">
                 {isCreateProjectFormOpen ? (
                     <CreateProjectForm
@@ -93,7 +103,7 @@ const ProjectsModule = ({ setHeaderAction }) => {
                     <ProjectList projects={projects} />
                 )}
             </section>
-        </ProjectsConfigContext.Provider>
+        </AppConfigContext.Provider>
     );
 };
 
