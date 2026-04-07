@@ -182,10 +182,12 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                     </div>
                 </div>
 
-                <div className="form-row path-preview-row">
-                    <div className="path-preview">
-                        <span className="path-label">Project files path: </span>
-                        <code className="path-value">{getFinalPath()}</code>
+                <div className="form-row">
+                    <div className="form-group">
+                        <label>Project files path: </label>
+                        <div className="path-preview">
+                            <code className="path-value">{getFinalPath()}</code>
+                        </div>
                     </div>
                 </div>
 
@@ -207,7 +209,7 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
 
                 {customPathEnabled && (
                     <div className="custom-path-fields">
-                        <div className="form-row custom-path-option">
+                        <div className="form-row form-option">
                             <div className="form-group radio-group">
                                 <input
                                     type="radio"
@@ -234,7 +236,7 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                             </div>
                         </div>
 
-                        <div className="form-row custom-path-option">
+                        <div className="form-row form-option">
                             <div className="form-group radio-group">
                                 <input
                                     type="radio"
