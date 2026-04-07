@@ -7,6 +7,7 @@ const ABSPATH = __DIR__;
 include ABSPATH . '/vendor/autoload.php';
 include ABSPATH . '/inc/functions.php';
 load_config();
+handle_cors();
 include ABSPATH . '/modules/projects-manager/projects-manager.php';
 
 include ABSPATH . '/routes.php';
