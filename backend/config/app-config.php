@@ -19,16 +19,10 @@ return [
     // Project folder naming pattern (supports variables like %project-slug%)
     'project_folder_name' => '%project-slug%',
 
-    // Default project structure
-    'project_folders' => [
-        'docs' => [
-            'description' => 'Documentation files',
-        ],
-        'src' => [
-            'description' => 'Source code files',
-        ],
-        'db-dump' => [
-            'description' => 'DB dumps',
-        ],
+    // Default project structure.
+    'project_folders_structure' => [
+        'docs' => 'docs',
+        'www' => '{slug}',
+        'db-dump' => 'db-dump',
     ],
 ];

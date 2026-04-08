@@ -38,7 +38,7 @@ class ProjectsManager extends Generic {
     private array $createProjectFields = [
         'title'       => [
             'always_required',
-            'max'           => 60,
+            'max'           => 1,
             'allowed_chars' => [ 'name_digits' ],
         ],
         'slug'        => [
@@ -125,6 +125,7 @@ class ProjectsManager extends Generic {
         }
 
         // Run specific checks for the data.
+        // @llm-agent-task: finalize filterValidateSpecific() function.
         $validated_data = $this->filterValidateSpecific( $validated_data );
 
         // Check for errors after validation.
@@ -132,31 +133,51 @@ class ProjectsManager extends Generic {
             return false;
         }
 
-        $path = $this->serverRoot . '/' . $data['slug'];
+        // @llm-agent-task: Implement project creation logic.
+        $project = $this->createProject( $validated_data );
 
-        if ( ! empty( $data['custom_path_enabled'] ) ) {
-            if ( $data['path_type'] === 'relative' && ! empty( $data['relative_path'] ) ) {
-                $path = $this->serverRoot . '/' . $data['relative_path'] . '/' . $data['slug'];
-            } elseif ( $data['path_type'] === 'absolute' && ! empty( $data['absolute_path'] ) ) {
-                $path = $data['absolute_path'] . '/' . $data['slug'];
-            }
-        }
-
-        // Normalize path.
-        $path = preg_replace( '#/+#', '/', $path );
-
-        $data['path'] = $path;
-
-        // @todo: Implement project creation logic.
-        // - Create project folder structure.
-        // - Create project-config.php.
-        // - Update server-config.php.
-        // - Create virtual host configuration.
-
-        return $data;
+        return $project;
     }
 
-    /**
+    private function createProject( array $data ) {
+        /**
+         * @llm-agent-task: create function for adding project to the list of projects. something like addProject().
+         * App main projects info should be stored in the .webserver-home/projects-info.json file.
+         * The file should be in the following format:
+         *                {
+         * "lastUpdated": "2025-06-25T00:37:00.208Z",
+         * "projects": []
+         * }
+         *                projects info should contain only the list of path to project root folder.
+         *                project root folder contains project-info.json file.
+         * /
+
+        // ---
+
+        /**
+         * @llm-agent-task: Create function for creating project root folder.
+         *                Creating project-info.json file inside the project root folder.
+         *                Adding all neessary info to the project-info.json file.
+         *                Creating initial folder structure based on the path provided.
+         *                Initial folder structure is set in the app-config.php file in the project_folders_structure key.
+         *                The keys are reserved names. Values are the names of the folders. `{slug}` is placeholder for the project slug.
+         *                'docs' for the project documentation.
+         *                'www' for the project website files. will be used as a directory root for appache config.
+         *                'db-dump' for the database dumps.
+         *                But the folder structure should be stored in the project-info.json file. Because maybe the initial folder structure will be changed in the future. So to avoid any issues, the folder structure should be stored in the project-info.json file.
+         */
+
+        /**
+         * @llm-agent-task: Create function for creating apache virtual host configuration file.
+         *                the path is in the server-config.php file in the path_to_apache_vhosts_dir key.
+         *                the vhosts file sample is in server-config.php file in the path_to_vhost_tpl_file key.
+         *                the vhosts file name should be in the following format: {project_slug}.conf
+         *                the vhosts file has placeholders whoch should be replaced.
+         */
+    }
+
+
+     /**
      * Update an existing project.
      *
      * @param string $projectId Project ID.
@@ -201,10 +222,11 @@ class ProjectsManager extends Generic {
      * @return array Array of validation errors, empty if valid.
      */
     public function filterValidateSpecific( array $fields_data ) : array {
-        # Check if the project name is already in use.
-        # Check if project with the same slug already exists.
-        # Check if the project path is already in use. Check depending on the path type.
-        # Check if the domain is already in use.
+        // @llm-agent-task: Check if the project name is already in use.
+        // @llm-agent-task: Check if project with the same slug already exists.
+        // @llm-agent-task: Check if the project path is already in use. Check depending on the path type.
+        // @llm-agent-task: Check if the domain is already in use.
+        // @llm-agent-task: Check if the custom path is already in use.
         return $fields_data;
     }
 }
