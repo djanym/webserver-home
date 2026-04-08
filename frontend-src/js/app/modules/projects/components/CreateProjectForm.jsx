@@ -22,16 +22,17 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         domain: '',
         client_name: '',
     });
-    const [customPathEnabled, setCustomPathEnabled] = useState(false);
     const [pathType, setPathType] = useState('relative'); // 'relative' or 'absolute'
+    const [customPathEnabled, setCustomPathEnabled] = useState(false);
     const [customRelativePath, setCustomRelativePath] = useState('');
     const [customAbsolutePath, setCustomAbsolutePath] = useState('');
 
+    // If slug was edited, then don't change it when title changes. If not edited, keep slug in sync with title.
     const [slugEdited, setSlugEdited] = useState(false);
-    const [errors, setErrors] = useState({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [errors, setErrors] = useState({});
 
-
+    // Calculate final path based on form data and config.
     const getFinalPath = () => {
         const projectsRoot = config.projects_root_path || '';
         const slug = formData.slug || '';
@@ -62,8 +63,8 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
             return updated;
         });
 
-        if (errors[name]) {
-            setErrors((prev) => ({ ...prev, [name]: null }));
+        if (errors[name] || errors.submit) {
+            setErrors((prev) => ({ ...prev, [name]: null, submit: null }));
         }
     };
 
@@ -74,8 +75,8 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
 
     const handleCustomPathChange = (setter, field) => (e) => {
         setter(e.target.value);
-        if (errors[field]) {
-            setErrors((prev) => ({ ...prev, [field]: null }));
+        if (errors[field] || errors.submit) {
+            setErrors((prev) => ({ ...prev, [field]: null, submit: null }));
         }
     };
 
@@ -123,15 +124,18 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         setIsSubmitting(true);
 
         try {
+            // Prepare data for submission. Include custom path info if enabled.
             const submissionData = {
                 ...formData,
                 custom_path_enabled: customPathEnabled,
-                path_type: pathType,
-                relative_path: customRelativePath,
-                absolute_path: customAbsolutePath,
-                final_path: getFinalPath(),
+                path_type: customPathEnabled ? pathType : null,
+                relative_path: customPathEnabled ? customRelativePath : null,
+                absolute_path: customPathEnabled ? customAbsolutePath : null,
             };
+
+            // Send the data to the backend API.
             const newProject = await apiCreateProject(submissionData);
+
             onProjectAdded(newProject);
             setFormData({ title: '', slug: '', domain: '', client_name: '' });
             setCustomPathEnabled(false);
@@ -140,7 +144,17 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
             setPathType('relative');
             setSlugEdited(false);
         } catch (err) {
-            setErrors({ submit: err.message || 'Failed to create project.' });
+            const backendValidationErrors = err?.validationErrors;
+
+            if (backendValidationErrors && typeof backendValidationErrors === 'object') {
+                setErrors((prev) => ({
+                    ...prev,
+                    ...backendValidationErrors,
+                    submit: err.message || null,
+                }));
+            } else {
+                setErrors({ submit: err.message || 'Failed to create project.' });
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -315,7 +329,12 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                         className="btn btn-primary"
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? 'Creating...' : 'Create Project'}
+                        {isSubmitting ? (
+                            <>
+                                <span className="button-spinner" aria-hidden="true"></span>
+                                <span>Creating...</span>
+                            </>
+                        ) : 'Create Project'}
                     </button>
                 </div>
             </form>

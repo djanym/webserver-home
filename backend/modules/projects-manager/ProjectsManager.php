@@ -6,12 +6,14 @@
 
 namespace WebserverHome;
 
+use WebserverHome\Generic;
+
 /**
  * Class ProjectManager
  *
  * @package WebserverHome
  */
-class ProjectsManager {
+class ProjectsManager extends Generic {
     /**
      * Singleton instance.
      *
@@ -24,14 +26,50 @@ class ProjectsManager {
      *
      * @var string
      */
-    private string $configPath;
+//    private string $configPath;
 
     /**
      * Path to the server root directory.
      *
      * @var string
      */
-    private string $serverRoot;
+//    private string $serverRoot;
+
+    private array $createProjectFields = [
+        'title'       => [
+            'always_required',
+            'max'           => 60,
+            'allowed_chars' => [ 'name_digits' ],
+        ],
+        'slug'        => [
+            'always_required',
+            'max'           => 60,
+            'allowed_chars' => [ 'slug' ],
+        ],
+        'domain'      => [
+            'always_required',
+            'is_domain',
+        ],
+        'client_name' => [
+            'always_required',
+            'max'           => 60,
+            'allowed_chars' => [ 'name_digits' ],
+        ],
+        'custom_path_enabled' => [
+            'bool',
+        ],
+        'path_type' => [
+            'options' => [ 'relative', 'absolute' ],
+        ],
+        'relative_path' => [
+            'max' => 200,
+            'is_path',
+        ],
+        'absolute_path' => [
+            'max' => 200,
+            'is_path',
+        ],
+    ];
 
     /**
      * Get the singleton instance.
@@ -42,14 +80,6 @@ class ProjectsManager {
         }
 
         return self::$instance;
-    }
-
-    /**
-     * Constructor.
-     */
-    public function __construct() {
-        $this->serverRoot = config( 'path_to_projects_root' );
-        $this->configPath = ABSPATH . '/config/projects.meta.json';
     }
 
     /**
@@ -77,11 +107,31 @@ class ProjectsManager {
     /**
      * Create a new project.
      *
-     * @param array $data Project data including name, domain, folder_name.
+     * @param array $input_data Project data from the form input.
      *
-     * @return array Created project data.
+     * @return array|false Created project data.
      */
-    public function createProject( array $data ) : array {
+    public function tryCreateProject( array $input_data ) : array|false {
+        // Validate input data first.
+//        $errors = $this->validateFormData( $data );
+        $input_data['custom_path_enabled'] = 0;
+
+        // Sanitize and validate provided fields data.
+        $validated_data = $this->filterValidateAll( $input_data, $this->createProjectFields );
+
+        // Check for errors after validation.
+        if ( $this->error->hasErrors() ) {
+            return false;
+        }
+
+        // Run specific checks for the data.
+        $validated_data = $this->filterValidateSpecific( $validated_data );
+
+        // Check for errors after validation.
+        if ( $this->error->hasErrors() ) {
+            return false;
+        }
+
         $path = $this->serverRoot . '/' . $data['slug'];
 
         if ( ! empty( $data['custom_path_enabled'] ) ) {
@@ -98,7 +148,6 @@ class ProjectsManager {
         $data['path'] = $path;
 
         // @todo: Implement project creation logic.
-        // - Validate input data.
         // - Create project folder structure.
         // - Create project-config.php.
         // - Update server-config.php.
@@ -145,42 +194,17 @@ class ProjectsManager {
     }
 
     /**
-     * Validate project data.
+     * Specific validation for specific fields.
      *
-     * @param array $data Project data to validate.
+     * @param array $fields_data Project data to validate.
      *
      * @return array Array of validation errors, empty if valid.
      */
-    public function validateProjectData( array $data ) : array {
-        $errors = [];
-
-        if ( empty( $data['title'] ) ) {
-            $errors['title'] = 'Project title is required.';
-        }
-
-        if ( empty( $data['slug'] ) ) {
-            $errors['slug'] = 'Project slug is required.';
-        } elseif ( ! preg_match( '/^[a-z0-9]+(?:-[a-z0-9]+)*$/', $data['slug'] ) ) {
-            $errors['slug'] = 'Slug may only contain lowercase letters, numbers, and hyphens.';
-        }
-
-        if ( empty( $data['domain'] ) ) {
-            $errors['domain'] = 'Virtual domain name is required.';
-        }
-
-        if ( empty( $data['client_name'] ) ) {
-            $errors['client_name'] = 'Client name is required.';
-        }
-
-        if ( ! empty( $data['custom_path_enabled'] ) ) {
-            if ( $data['path_type'] === 'relative' && empty( $data['relative_path'] ) ) {
-                $errors['relative_path'] = 'Relative path is required.';
-            } elseif ( $data['path_type'] === 'absolute' && empty( $data['absolute_path'] ) ) {
-                $errors['absolute_path'] = 'Absolute path is required.';
-            }
-        }
-
-        return $errors;
+    public function filterValidateSpecific( array $fields_data ) : array {
+        # Check if the project name is already in use.
+        # Check if project with the same slug already exists.
+        # Check if the project path is already in use. Check depending on the path type.
+        # Check if the domain is already in use.
+        return $fields_data;
     }
 }
-

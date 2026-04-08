@@ -2,7 +2,7 @@
 
 use WebserverHome\ProjectsManager;
 
-function wb_projects_manager_get_all_projects() : void {
+function pmGetAllProjects() : void {
     $manager  = ProjectsManager::get_instance();
     $projects = $manager->getAllProjects();
 
@@ -12,7 +12,7 @@ function wb_projects_manager_get_all_projects() : void {
     ] );
 }
 
-function wb_projects_manager_get_project( string $id ) : void {
+function pmGetProject( string $id ) : void {
     $manager = ProjectsManager::get_instance();
     $project = $manager->getProject( $id );
 
@@ -23,25 +23,30 @@ function wb_projects_manager_get_project( string $id ) : void {
     send_json_success( [ 'project' => $project ] );
 }
 
-function wb_projects_manager_create_project() : void {
-    $input = json_decode( file_get_contents( 'php://input' ), true );
+/**
+ * @throws JsonException
+ */
+function CreateProjectCb() : void {
+    $input = json_decode( file_get_contents( 'php://input' ), true, 512, JSON_THROW_ON_ERROR );
 
     if ( ! $input ) {
         send_json_error( 'Invalid request data.', 400 );
     }
 
     $manager = ProjectsManager::get_instance();
-    $errors  = $manager->validateProjectData( $input );
+    $project_data  = $manager->tryCreateProject( $input );
 
-    if ( ! empty( $errors ) ) {
-        send_json_error( [ 'errors' => $errors ], 422 );
+    if ( is_app_error( $project_data ) ) {
+        $status_code = 422;
+    } else {
+        $status_code = 201;
     }
 
-    $project = $manager->createProject( $input );
-    send_json_success( [ 'project' => $project ], 201 );
+//    send_json_success( [ 'project' => $project ], $status_code );
+    $manager->sendJsonResponse( [ 'project' => $project_data ], $status_code );
 }
 
-function wb_projects_manager_update_project( string $id ) : void {
+function pmUpdateProject( string $id ) : void {
     $manager = ProjectsManager::get_instance();
 
     if ( ! $manager->projectExists( $id ) ) {
@@ -58,7 +63,7 @@ function wb_projects_manager_update_project( string $id ) : void {
     send_json_success( [ 'project' => $project ] );
 }
 
-function wb_projects_manager_delete_project( string $id ) : void {
+function pmDeleteProject( string $id ) : void {
     $manager = ProjectsManager::get_instance();
 
     if ( ! $manager->projectExists( $id ) ) {
@@ -68,4 +73,3 @@ function wb_projects_manager_delete_project( string $id ) : void {
     $manager->deleteProject( $id );
     send_json_success( 'Project deleted successfully.' );
 }
-

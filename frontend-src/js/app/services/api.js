@@ -47,6 +47,26 @@ const resolveApiUrl = (apiRoute) => {
     return `${API_BASE_URL}/${normalizedRoute}`;
 };
 
+const buildApiError = (message, payload = null, status = null) => {
+    const error = new Error(message || 'Request failed.');
+
+    if (status !== null) {
+        error.status = status;
+    }
+
+    if (payload) {
+        error.payload = payload;
+    }
+
+    const validationErrors = payload?.data?.errors;
+
+    if (validationErrors && typeof validationErrors === 'object') {
+        error.validationErrors = validationErrors;
+    }
+
+    return error;
+};
+
 /**
  * Shared fetch wrapper with strict response handling.
  *
@@ -84,11 +104,11 @@ export const apiRequest = async (apiRoute, data = null, method = 'GET', options 
 
     if (!response.ok) {
         const message = payload?.error || payload?.message || `Server error: ${response.status} ${response.statusText}`;
-        throw new Error(message);
+        throw buildApiError(message, payload, response.status);
     }
 
     if (payload && payload.success === false) {
-        throw new Error(payload.error || payload.message || 'Request failed.');
+        throw buildApiError(payload.error || payload.message || 'Request failed.', payload, response.status);
     }
 
     return payload;

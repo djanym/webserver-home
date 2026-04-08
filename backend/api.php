@@ -8,10 +8,13 @@ include ABSPATH . '/vendor/autoload.php';
 include ABSPATH . '/inc/functions.php';
 load_config();
 handle_cors();
+include ABSPATH . '/inc/Validator.php';
+include ABSPATH . '/inc/Generic.php';
 include ABSPATH . '/inc/AppError.php';
 include ABSPATH . '/inc/AppShared.php';
+// Modules.
 include ABSPATH . '/modules/projects-manager/projects-manager.php';
-
+// Default routes.
 include ABSPATH . '/routes.php';
 
 // End clock time in seconds.

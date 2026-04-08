@@ -17,7 +17,7 @@ export const apiFetchProjects = async () => {
 };
 
 export const apiCreateProject = async (projectData) => {
-    const data = await apiProjectsRequest('', projectData);
+    const data = await apiProjectsRequest('add', projectData);
     return data.data?.project || data.data;
 };
 
