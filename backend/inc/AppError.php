@@ -6,11 +6,19 @@
 namespace WebserverHome;
 
 /**
- * Application Error class.
- * Container for checking for application errors and error messages. Return
- * AppError and use is_app_error() to check if this class is returned. Many
- * core application functions pass this class in the event of an error and
- * if not handled properly will result in code errors.
+ * Structured backend error aggregator.
+ *
+ * Functionality description:
+ * - Created once per request flow (usually via `Generic::$error`).
+ * - Add errors with `add( code, message[, data] )` using deterministic field/code keys.
+ * - Error codes should be field names if the error is regarding a specific field.
+ * - Error codes will be used to find the field by name on the frontend side.
+ * - Query flow state via `hasErrors()` and read payload via `getErrorCodes()` / `getErrorMessage()`.
+ * - Merge/export supported with `mergeFrom()` / `exportTo()` for composed flows.
+ *
+ * Serialization boundary:
+ * - This class stores errors only.
+ * - JSON response emission is performed by `Generic::sendErrorResponse()`, which maps codes to messages.
  */
 #[AllowDynamicProperties]
 class AppError {

@@ -3,7 +3,18 @@
 namespace WebserverHome;
 
 /**
- * Class Validator.
+ * Validation rule engine contract for backend request flows.
+ *
+ * Fuctionality description:
+ * - Call `Validator::validate( $value, $rules )` through `Generic::validateField()`.
+ * - Return type is strict: `true` when valid, otherwise a single error string.
+ * - Rules are resolved to `rule_{name}` methods and executed in declaration order.
+ * - Rule declarations support scalar form, key/value form, and arg-array form (`rule_value`, `error_message`, etc.).
+ * - `optional` short-circuits validation for empty values.
+ *
+ * Integration boundary:
+ * - This class executes rule logic only; it does not store or emit response errors.
+ * - Error aggregation/JSON response is handled by `AppError` + `Generic`.
  */
 class Validator {
 

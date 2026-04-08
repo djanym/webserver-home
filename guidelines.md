@@ -1,5 +1,7 @@
 # Webserver Home Manager — LLM Agent Guidelines
 
+Backend implementation directives for agents are in `guidelines-backend.md`.
+
 # General Description
 
 Webserver Home Manager is a **web-based dashboard** for managing **local web development projects** and **Apache virtual hosts**.
@@ -162,6 +164,8 @@ Each project:
 
 # Backend
 
+Primary backend agent contract: `guidelines-backend.md`.
+
 ## Rules
 
 - Backend root: `/backend`
@@ -187,6 +191,9 @@ Rules:
 - Feature-based classes
 - Module-specific functionality should live in module folders
 - Shared/common classes may be placed in `inc` folder
+- Base flow class: `/backend/inc/Generic.php` (read class header first for response, validation, and error pipeline).
+- Validation engine: `/backend/inc/Validator.php` (read class header first; for rule-level behavior inspect class methods).
+- Error container: `/backend/inc/AppError.php` (read class header first; use for error aggregation and response payload preparation).
 
 ## Config
 
@@ -304,3 +311,8 @@ Always:
 - Avoid heavy frameworks
 - Use JSON API
 - Keep projects portable
+- For backend tasks, load `guidelines-backend.md` before editing handlers/modules.
+- Use `Generic` as request-flow base in backend classes; avoid duplicating response/validation/error plumbing.
+- Add field errors via `AppError` (`$this->error->add(...)`) and return JSON via `Generic::sendErrorResponse()`.
+- Run input checks through `Generic::filterValidateAll()` / `Generic::validateField()`; `Validator` is the single rule execution engine.
+- For internals of any backend shared class, trust and follow that class header contract first, then method-level implementation.

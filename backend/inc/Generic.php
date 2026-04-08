@@ -5,7 +5,17 @@ namespace WebserverHome;
 use RuntimeException;
 
 /**
- * Class Generic. Implements common methods used in other classes.
+ * Backend request-flow base contract.
+ *
+ * Responsibilities:
+ * - Owns per-request error container (`AppError`) and additional response payload.
+ * - Provides JSON emitters: `sendJsonResponse()` for success path, `sendErrorResponse()` for failure path.
+ * - Provides validation wrappers: `filterValidateAll()` (field filtering + recursive subset validation)
+ *   and `validateField()` (delegates rule execution to `Validator::validate()`).
+ *
+ * Agent usage:
+ * - Extend/reuse this class for handlers/services that validate input and return API responses.
+ * - Do not duplicate response/error plumbing in module classes.
  */
 class Generic {
     /**
