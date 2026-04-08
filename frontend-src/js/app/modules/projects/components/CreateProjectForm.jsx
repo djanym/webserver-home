@@ -5,37 +5,114 @@
 import React, { useState } from 'react';
 import { apiCreateProject } from '../projects-api';
 import { useAppConfig } from '../../../services/config-context';
-
-const slugify = (value) =>
-    value
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-')
-        .replace(/-+/g, '-');
+import { useForm } from '../../../services/forms';
+import { slugify } from '../../../services/helpers';
 
 const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
     const config = useAppConfig();
-    const [formData, setFormData] = useState({
-        title: '',
-        slug: '',
-        domain: '',
-        client_name: '',
-    });
-    const [pathType, setPathType] = useState('relative'); // 'relative' or 'absolute'
+    const [pathType, setPathType] = useState('relative');
     const [customPathEnabled, setCustomPathEnabled] = useState(false);
     const [customRelativePath, setCustomRelativePath] = useState('');
     const [customAbsolutePath, setCustomAbsolutePath] = useState('');
-
-    // If slug was edited, then don't change it when title changes. If not edited, keep slug in sync with title.
     const [slugEdited, setSlugEdited] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [errors, setErrors] = useState({});
 
-    // Calculate final path based on form data and config.
+    const validate = (values) => {
+        const errors = {};
+
+        if (!values.title?.trim()) {
+            errors.title = 'Project title is required.';
+        }
+
+        if (!values.slug?.trim()) {
+            errors.slug = 'Project slug is required.';
+        } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(values.slug)) {
+            errors.slug = 'Slug may only contain lowercase letters, numbers, and hyphens.';
+        }
+
+        if (!values.domain?.trim()) {
+            errors.domain = 'Virtual domain name is required.';
+        }
+
+        if (!values.client_name?.trim()) {
+            errors.client_name = 'Client name is required.';
+        }
+
+        if (customPathEnabled) {
+            if (pathType === 'relative' && !customRelativePath.trim()) {
+                errors.relative_path = 'Relative path is required.';
+            } else if (pathType === 'absolute' && !customAbsolutePath.trim()) {
+                errors.absolute_path = 'Absolute path is required.';
+            }
+        }
+
+        return errors;
+    };
+
+    const handleSuccess = () => {
+        onProjectAdded();
+        reset();
+        setCustomPathEnabled(false);
+        setCustomRelativePath('');
+        setCustomAbsolutePath('');
+        setPathType('relative');
+        setSlugEdited(false);
+    };
+
+    const {
+        values,
+        setValue,
+        setMultipleValues,
+        handleSubmit,
+        isSubmitting,
+        errors,
+        generalError,
+        getFieldProps,
+        hasFieldError,
+        reset
+    } = useForm({
+        initialValues: {
+            title: '',
+            slug: '',
+            domain: '',
+            client_name: ''
+        },
+        onSubmit: async (formValues) => {
+            const submissionData = {
+                ...formValues,
+                custom_path_enabled: customPathEnabled,
+                path_type: customPathEnabled ? pathType : null,
+                relative_path: customPathEnabled ? customRelativePath : null,
+                absolute_path: customPathEnabled ? customAbsolutePath : null
+            };
+            return apiCreateProject(submissionData);
+        },
+        onSuccess: handleSuccess,
+        validate
+    });
+
+    const handleTitleChange = (e) => {
+        const { value } = e.target;
+        const updates = { title: value };
+
+        if (!slugEdited) {
+            updates.slug = slugify(value);
+        }
+
+        setMultipleValues(updates);
+    };
+
+    const handleSlugChange = (e) => {
+        setSlugEdited(true);
+        setValue('slug', e.target.value);
+    };
+
+    const handleCustomPathChange = (setter, field) => (e) => {
+        setter(e.target.value);
+    };
+
     const getFinalPath = () => {
         const projectsRoot = config.projects_root_path || '';
-        const slug = formData.slug || '';
+        const slug = values.slug || '';
 
         if (!customPathEnabled) {
             return `${projectsRoot}/${slug}`.replace(/\/+/g, '/');
@@ -50,116 +127,6 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         }
     };
 
-    const handleChange = (e) => {
-        const { name, value } = e.target;
-
-        setFormData((prev) => {
-            const updated = { ...prev, [name]: value };
-
-            if (name === 'title' && !slugEdited) {
-                updated.slug = slugify(value);
-            }
-
-            return updated;
-        });
-
-        if (errors[name] || errors.submit) {
-            setErrors((prev) => ({ ...prev, [name]: null, submit: null }));
-        }
-    };
-
-    const handleSlugChange = (e) => {
-        setSlugEdited(true);
-        handleChange(e);
-    };
-
-    const handleCustomPathChange = (setter, field) => (e) => {
-        setter(e.target.value);
-        if (errors[field] || errors.submit) {
-            setErrors((prev) => ({ ...prev, [field]: null, submit: null }));
-        }
-    };
-
-    const validate = () => {
-        const newErrors = {};
-
-        if (!formData.title.trim()) {
-            newErrors.title = 'Project title is required.';
-        }
-
-        if (!formData.slug.trim()) {
-            newErrors.slug = 'Project slug is required.';
-        } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(formData.slug)) {
-            newErrors.slug = 'Slug may only contain lowercase letters, numbers, and hyphens.';
-        }
-
-        if (!formData.domain.trim()) {
-            newErrors.domain = 'Virtual domain name is required.';
-        }
-
-        if (!formData.client_name.trim()) {
-            newErrors.client_name = 'Client name is required.';
-        }
-
-        if (customPathEnabled) {
-            if (pathType === 'relative' && !customRelativePath.trim()) {
-                newErrors.relative_path = 'Relative path is required.';
-            } else if (pathType === 'absolute' && !customAbsolutePath.trim()) {
-                newErrors.absolute_path = 'Absolute path is required.';
-            }
-        }
-
-        return newErrors;
-    };
-
-    const handleSubmit = async (e) => {
-        e.preventDefault();
-        const validationErrors = validate();
-
-        if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors);
-            return;
-        }
-
-        setIsSubmitting(true);
-
-        try {
-            // Prepare data for submission. Include custom path info if enabled.
-            const submissionData = {
-                ...formData,
-                custom_path_enabled: customPathEnabled,
-                path_type: customPathEnabled ? pathType : null,
-                relative_path: customPathEnabled ? customRelativePath : null,
-                absolute_path: customPathEnabled ? customAbsolutePath : null,
-            };
-
-            // Send the data to the backend API.
-            const newProject = await apiCreateProject(submissionData);
-
-            onProjectAdded(newProject);
-            setFormData({ title: '', slug: '', domain: '', client_name: '' });
-            setCustomPathEnabled(false);
-            setCustomRelativePath('');
-            setCustomAbsolutePath('');
-            setPathType('relative');
-            setSlugEdited(false);
-        } catch (err) {
-            const backendValidationErrors = err?.validationErrors;
-
-            if (backendValidationErrors && typeof backendValidationErrors === 'object') {
-                setErrors((prev) => ({
-                    ...prev,
-                    ...backendValidationErrors,
-                    submit: err.message || null,
-                }));
-            } else {
-                setErrors({ submit: err.message || 'Failed to create project.' });
-            }
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
     return (
         <div className="add-project-form-wrapper">
             <h2 className="form-title">Add New Project</h2>
@@ -170,13 +137,11 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                         <input
                             type="text"
                             id="project-title"
-                            name="title"
-                            value={formData.title}
-                            onChange={handleChange}
+                            {...getFieldProps('title')}
+                            onChange={handleTitleChange}
                             placeholder="My Awesome Project"
-                            className={errors.title ? 'error' : ''}
                         />
-                        {errors.title && <span className="error-message">{errors.title}</span>}
+                        {hasFieldError('title') && <span className="error-message">{errors.title}</span>}
                     </div>
                 </div>
 
@@ -187,12 +152,12 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                             type="text"
                             id="project-slug"
                             name="slug"
-                            value={formData.slug}
+                            value={values.slug}
                             onChange={handleSlugChange}
                             placeholder="my-awesome-project"
-                            className={errors.slug ? 'error' : ''}
+                            className={hasFieldError('slug') ? 'error' : ''}
                         />
-                        {errors.slug && <span className="error-message">{errors.slug}</span>}
+                        {hasFieldError('slug') && <span className="error-message">{errors.slug}</span>}
                     </div>
                 </div>
 
@@ -243,9 +208,9 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                                     onChange={handleCustomPathChange(setCustomRelativePath, 'relative_path')}
                                     placeholder="e.g. clients/acme"
                                     disabled={pathType !== 'relative'}
-                                    className={(pathType !== 'relative' ? 'disabled' : '') + (errors.relative_path ? ' error' : '')}
+                                    className={(pathType !== 'relative' ? 'disabled' : '') + (hasFieldError('relative_path') ? ' error' : '')}
                                 />
-                                {errors.relative_path && <span className="error-message">{errors.relative_path}</span>}
+                                {hasFieldError('relative_path') && <span className="error-message">{errors.relative_path}</span>}
                                 <small className="help-text">Relative to: {config.projects_root_path}</small>
                             </div>
                         </div>
@@ -270,9 +235,9 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                                     onChange={handleCustomPathChange(setCustomAbsolutePath, 'absolute_path')}
                                     placeholder="e.g. /var/www/projects"
                                     disabled={pathType !== 'absolute'}
-                                    className={(pathType !== 'absolute' ? 'disabled' : '') + (errors.absolute_path ? ' error' : '')}
+                                    className={(pathType !== 'absolute' ? 'disabled' : '') + (hasFieldError('absolute_path') ? ' error' : '')}
                                 />
-                                {errors.absolute_path && <span className="error-message">{errors.absolute_path}</span>}
+                                {hasFieldError('absolute_path') && <span className="error-message">{errors.absolute_path}</span>}
                                 <small className="help-text">Full system path</small>
                             </div>
                         </div>
@@ -285,13 +250,10 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                         <input
                             type="text"
                             id="project-domain"
-                            name="domain"
-                            value={formData.domain}
-                            onChange={handleChange}
+                            {...getFieldProps('domain')}
                             placeholder="myproject.local"
-                            className={errors.domain ? 'error' : ''}
                         />
-                        {errors.domain && <span className="error-message">{errors.domain}</span>}
+                        {hasFieldError('domain') && <span className="error-message">{errors.domain}</span>}
                     </div>
                 </div>
 
@@ -301,18 +263,15 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                         <input
                             type="text"
                             id="project-client"
-                            name="client_name"
-                            value={formData.client_name}
-                            onChange={handleChange}
+                            {...getFieldProps('client_name')}
                             placeholder="Acme Corp"
-                            className={errors.client_name ? 'error' : ''}
                         />
-                        {errors.client_name && <span className="error-message">{errors.client_name}</span>}
+                        {hasFieldError('client_name') && <span className="error-message">{errors.client_name}</span>}
                     </div>
                 </div>
 
-                {errors.submit && (
-                    <div className="form-error">{errors.submit}</div>
+                {generalError && (
+                    <div className="form-error">{generalError}</div>
                 )}
 
                 <div className="form-actions">
