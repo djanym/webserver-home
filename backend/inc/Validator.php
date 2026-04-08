@@ -1,5 +1,7 @@
 <?php
 
+namespace WebserverHome;
+
 /**
  * Class Validator.
  */
@@ -14,7 +16,7 @@ class Validator {
      * - not_empty: check if value is not empty if set in the form data.
      * - not_empty_array: check if value is an array and is not empty. Used for set of subfields.
      * - always_required: check if value is not empty even if it's not set in the form data. See rule_always_required() for more details.
-     * - current_user_can: check if current user has the capability. Example: [ 'current_user_can' => 'edit_posts' ].
+     * - current_user_can: check if current user has the capability. Example: [ 'current_user_can' => 'create_projects' ].
      * - min: check if value length is greater than the rule value. Example: [ 'min' => 10 ]. Works for both strings and arrays.
      * - max: check if value length is less than the rule value. Example: [ 'max' => 10 ]. Works for both strings and arrays.
      * - is_phone: check if value is a valid phone number format. The rule should be 'is_phone', not 'is_phone' => true.
@@ -62,7 +64,7 @@ class Validator {
      *
      * @return true|string True if value is valid, error message otherwise.
      */
-    public static function validate( string|array $value, array $rules = [] ): true|string {
+    public static function validate( string|array $value, array $rules = [] ) : true|string {
         foreach ( $rules as $rule_key => $rule_value ) {
             $rule_args = [];
 
@@ -110,7 +112,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_not_empty( $value ): true|string {
+    private static function rule_not_empty( $value ) : true|string {
         if ( empty( $value ) ) {
             return 'Required field.';
         }
@@ -129,7 +131,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_always_required( mixed $value, array $rule_args = [] ): true|string {
+    private static function rule_always_required( mixed $value, array $rule_args = [] ) : true|string {
         if ( empty( $value ) ) {
 //            if ( ! empty( $rule_args['error_message'] ) ) {
 //                return $rule_args['error_message'];
@@ -148,7 +150,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_not_empty_array( $value ): true|string {
+    private static function rule_not_empty_array( $value ) : true|string {
         if ( ! is_array( $value ) || empty( $value ) ) {
             return 'Required field.';
         }
@@ -166,7 +168,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_min( string|array $value, int $min_length ): true|string {
+    private static function rule_min( string|array $value, int $min_length ) : true|string {
         if ( is_array( $value ) && count( $value ) > $min_length ) {
             return 'Minimum ' . $min_length . ' items required.';
         }
@@ -188,7 +190,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_max( string|array $value, int $max_length ): true|string {
+    private static function rule_max( string|array $value, int $max_length ) : true|string {
         if ( is_array( $value ) && count( $value ) > $max_length ) {
             return 'Maximum ' . $max_length . ' items allowed.';
         }
@@ -208,8 +210,8 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_current_user_can( $value, string $capability ): true|string {
-        if ( ! current_user_can( $capability ) ) {
+    private static function rule_current_user_can( $value, string $capability ) : true|string {
+        if ( ! user_can( $capability ) ) {
             return 'You do not have permission to perform this action.';
         }
 
@@ -224,7 +226,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_is_phone_format( string $value, $format ): true|string {
+    private static function rule_is_phone_format( string $value, $format ) : true|string {
         if ( ! is_array( $format ) ) {
             $format = [ $format ];
         }
@@ -254,7 +256,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_is_email( string $value ): true|string {
+    private static function rule_is_email( string $value ) : true|string {
         if ( ! is_email( $value ) ) {
             return 'Invalid email format.';
         }
@@ -285,7 +287,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_is_price( string $value, array $rule_args = [] ): true|string {
+    private static function rule_is_price( string $value, array $rule_args = [] ) : true|string {
         $negative_regex = '';
         if ( in_array( 'allow_negative', $rule_args ) ) {
             // Optional negative value.
@@ -323,7 +325,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_is_url( string $value ): true|string {
+    private static function rule_is_url( string $value ) : true|string {
         if ( ! filter_var( $value, FILTER_VALIDATE_URL ) ) {
             return 'Invalid URL format.';
         }
@@ -331,7 +333,127 @@ class Validator {
         return true;
     }
 
-    private static function rule_options( string $value, array $options ): true|string {
+    /**
+     * Check if value is a valid domain name format.
+     * Validates raw domain names (virtual hosts) without protocol prefix or slashes.
+     * Examples: example.com, www.example.com, api.subdomain.example.com
+     *
+     * @param string $value Value to check.
+     *
+     * @return true|string True if valid, error message otherwise.
+     */
+    private static function rule_is_domain( string $value ) : true|string {
+        // Check for empty value.
+        if ( empty( $value ) ) {
+            return 'Invalid domain format.';
+        }
+
+        // Check for protocol prefix which should not exist.
+        if ( preg_match( '~^(https?|ftp)://~i', $value ) ) {
+            return 'Invalid domain format: protocol prefix not allowed.';
+        }
+
+        // Check for slashes, which should not exist in a domain name.
+        if ( str_contains( $value, '/' ) ) {
+            return 'Invalid domain format: slashes not allowed.';
+        }
+
+        // Check for whitespace.
+        if ( preg_match( '/\s/', $value ) ) {
+            return 'Invalid domain format: spaces not allowed.';
+        }
+
+        // Overall domain length should not exceed 253 characters.
+        if ( strlen( $value ) > 253 ) {
+            return 'Domain name too long. Maximum 253 characters allowed.';
+        }
+
+        // Overall domain length should be at least 3 characters (e.g., a.co).
+        if ( strlen( $value ) < 3 ) {
+            return 'Domain name too short. Minimum 3 characters required.';
+        }
+
+        // Domain should contain at least one dot to separate labels.
+        if ( ! str_contains( $value, '.' ) ) {
+            return 'Invalid domain format: must contain at least one dot.';
+        }
+
+        // Split domain into labels and validate each one.
+        $labels = explode( '.', $value );
+
+        foreach ( $labels as $label ) {
+            // Each label must be 1-63 characters.
+            if ( strlen( $label ) < 1 || strlen( $label ) > 63 ) {
+                return 'Invalid domain format: each label must be 1-63 characters.';
+            }
+
+            // Each label must start and end with alphanumeric character.
+            if ( ! preg_match( '/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/i', $label ) ) {
+                return 'Invalid domain format: labels must start and end with alphanumeric character, and contain only letters, numbers, and hyphens.';
+            }
+        }
+
+        // TLD (last label) should be at least 2 characters and contain only letters.
+        $tld = end( $labels );
+        if ( strlen( $tld ) < 2 || ! preg_match( '/^[a-z]+$/i', $tld ) ) {
+            return 'Invalid domain format: TLD must be at least 2 letters.';
+        }
+
+        return true;
+    }
+
+    /**
+     * Check if value is a valid path format that can be used in Unix/Mac/Windows.
+     *
+     * @param string $value Value to check.
+     *
+     * @return true|string True if valid, error message otherwise.
+     */
+    private static function rule_is_path( string $value ) : true|string {
+        // Check for invalid characters that are not allowed in any filesystem.
+        // Null byte is forbidden in all systems.
+        if ( str_contains( $value, "\0" ) ) {
+            return 'Invalid path: null byte not allowed.';
+        }
+
+        // Check for Windows reserved characters: < > : " | ? *
+        // These are invalid in Windows paths but some are valid in Unix (e.g., :, ?, *)
+        // For cross-platform compatibility, we'll disallow them all.
+        if ( preg_match( '/[<>:"|?*]/', $value ) ) {
+            return 'Invalid path: contains forbidden characters.';
+        }
+
+        // Check for control characters (0x00-0x1F, 0x7F).
+        if ( preg_match( '/[\x00-\x1F\x7F]/', $value ) ) {
+            return 'Invalid path: contains control characters.';
+        }
+
+        // Check for Windows reserved names (CON, PRN, AUX, NUL, COM1-9, LPT1-9).
+        // These can appear as filename or with extension.
+        $reserved_names = '/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(\.|$)/i';
+        $path_parts     = explode( '/', str_replace( '\\', '/', $value ) );
+        foreach ( $path_parts as $part ) {
+            if ( preg_match( $reserved_names, $part ) ) {
+                return 'Invalid path: contains reserved system name.';
+            }
+        }
+
+        // Check for paths ending with space or period (invalid in Windows).
+        foreach ( $path_parts as $part ) {
+            if ( $part !== '' && ( str_ends_with( $part, ' ' ) || str_ends_with( $part, '.' ) ) ) {
+                return 'Invalid path: path component cannot end with space or period.';
+            }
+        }
+
+        // Ensure path is not empty.
+        if ( trim( $value ) === '' ) {
+            return 'Invalid path: cannot be empty.';
+        }
+
+        return true;
+    }
+
+    private static function rule_options( string $value, array $options ) : true|string {
         if ( ! in_array( $value, $options, true ) ) {
             return 'Invalid value.';
         }
@@ -346,7 +468,7 @@ class Validator {
      *
      * @return true|string
      */
-    private static function rule_is_unix_timestamp( string $value ): bool|string {
+    private static function rule_is_unix_timestamp( string $value ) : bool|string {
         // Check if value is numeric.
         if ( ! is_numeric( $value ) ) {
             return 'Invalid format: must be numeric.';
@@ -384,7 +506,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_allowed_chars( string $value, array $allowed_chars ): true|string {
+    private static function rule_allowed_chars( string $value, array $allowed_chars ) : true|string {
         $regex = '';
 
         // Run through each character rule and add it to the regex.
@@ -393,11 +515,17 @@ class Validator {
             if ( $char_rule === 'name' ) {
                 $error_message = 'Only letters, spaces, hyphens, apostrophes and periods are allowed.';
                 // Adds all letters in all languages, spaces, hyphens, apostrophes, periods.
-                $regex .= '\p{L}\s\-\'\.';            }
+                $regex .= '\p{L}\s\-\'\.';
+            }
             if ( $char_rule === 'name_digits' ) {
                 $error_message = 'Only letters, numbers, spaces, hyphens, apostrophes and periods are allowed.';
                 // Adds all letters in all languages, digits, spaces, hyphens, apostrophes, periods.
                 $regex .= '\p{L}\d\s\-\'\.';
+            }
+            if ( $char_rule === 'slug' ) {
+                $error_message = 'Only lowercase letters, numbers, spaces and hyphens are allowed.';
+                // Adds lowercase letters, digits, spaces, and hyphens.
+                $regex .= 'a-z0-9\s\-';
             }
             if ( $char_rule === 'letters' ) {
                 // Add all letters in all languages.
@@ -444,7 +572,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_bool( string $value ): true|string {
+    private static function rule_bool( string $value ) : true|string {
         if ( $value !== '1' && $value !== '0' ) {
             return 'Invalid value.';
         }
@@ -461,7 +589,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_file_max( array $input_field_value, int $max_size ): true|string {
+    private static function rule_file_max( array $input_field_value, int $max_size ) : true|string {
         if ( $input_field_value['size'] > $max_size ) {
             return 'Maximum file size is ' . size_format( $max_size );
         }
@@ -478,7 +606,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_file_min( array $input_field_value, int $min_size ): true|string {
+    private static function rule_file_min( array $input_field_value, int $min_size ) : true|string {
         if ( $input_field_value['size'] < $min_size ) {
             return 'Minimum file size is ' . size_format( $min_size );
         }
@@ -486,7 +614,7 @@ class Validator {
         return true;
     }
 
-    private static function rule_file_extension( array $input_field_value, array $allowed_file_extensions ): true|string {
+    private static function rule_file_extension( array $input_field_value, array $allowed_file_extensions ) : true|string {
         $file_extension = wp_check_filetype( $input_field_value['name'] );
         if ( ! in_array( $file_extension['ext'], $allowed_file_extensions, true ) ) {
             return 'Invalid file extension. Allowed extensions: ' . implode( ', ', $allowed_file_extensions );
@@ -495,7 +623,7 @@ class Validator {
         return true;
     }
 
-    private static function rule_file_image_dimension( array $input_field_value, array $allowed_file_types ): true|string {
+    private static function rule_file_image_dimension( array $input_field_value, array $allowed_file_types ) : true|string {
 //                // Check image dimensions.
 //                if ( $rule_key === 'image_dimensions' ) {
 //                    $image_size = getimagesize( $file_data['tmp_name'] );
@@ -523,7 +651,7 @@ class Validator {
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_file_error_check( array $input_field_value ): true|string {
+    private static function rule_file_error_check( array $input_field_value ) : true|string {
         if ( $input_field_value['error'] === UPLOAD_ERR_OK ) {
             return true;
         }
