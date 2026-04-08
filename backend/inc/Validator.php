@@ -373,30 +373,19 @@ class Validator {
             return 'Domain name too short. Minimum 3 characters required.';
         }
 
-        // Domain should contain at least one dot to separate labels.
-        if ( ! str_contains( $value, '.' ) ) {
-            return 'Invalid domain format: must contain at least one dot.';
-        }
-
         // Split domain into labels and validate each one.
         $labels = explode( '.', $value );
 
         foreach ( $labels as $label ) {
             // Each label must be 1-63 characters.
-            if ( strlen( $label ) < 1 || strlen( $label ) > 63 ) {
-                return 'Invalid domain format: each label must be 1-63 characters.';
+            if ( $label === '' || strlen( $label ) > 63 ) {
+                return 'Invalid domain format: each domain part must be 1-63 characters.';
             }
 
             // Each label must start and end with alphanumeric character.
             if ( ! preg_match( '/^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/i', $label ) ) {
-                return 'Invalid domain format: labels must start and end with alphanumeric character, and contain only letters, numbers, and hyphens.';
+                return 'Invalid domain format: domain parts must start and end with alphanumeric character, and contain only letters, numbers, and hyphens.';
             }
-        }
-
-        // TLD (last label) should be at least 2 characters and contain only letters.
-        $tld = end( $labels );
-        if ( strlen( $tld ) < 2 || ! preg_match( '/^[a-z]+$/i', $tld ) ) {
-            return 'Invalid domain format: TLD must be at least 2 letters.';
         }
 
         return true;

@@ -1,6 +1,8 @@
 <?php
 
-use WebserverHome\AppError;
+namespace WebserverHome;
+
+use RuntimeException;
 
 /**
  * Class Generic. Implements common methods used in other classes.
@@ -11,7 +13,7 @@ class Generic {
      *
      * @var array
      */
-    public array $ajax_response = [];
+    public array $additionalResponseData = [];
 
     public AppError $error;
 
@@ -23,52 +25,33 @@ class Generic {
     }
 
     /**
-     * Adds redirect URL to the ajax response.
-     *
-     * @return void
-     */
-    public function redirect_to( string $url ): void {
-        $url = wp_sanitize_redirect( $url );
-        $url = wp_validate_redirect( $url );
-
-        $this->ajax_response['redirect_url'] = $url;
-    }
-
-    /**
      * Send ajax response in JSON format.
      *
-     * @param string|null $success_message Optional. The message to be sent in the response.
+     * @param array|string|null $data
+     * @param int|null          $status_code
      *
      * @return void
      */
-    public function send_ajax_response( $success_message = '' ): void {
+    public function sendJsonResponse( array|string $data = null, int $status_code = null ) : void {
         // Default value.
         $response = [ 'success' => true ];
 
         // Prepare errors data response.
-        if ( $this->error->has_errors() ) {
-            $response['success'] = false;
-            // Create an array of error messages in format: error code => error message.
-            foreach ( $this->error->get_error_codes() as $code ) {
-                $response['errors'][ $code ] = $this->error->get_error_message( $code );
+        if ( $this->error->hasErrors() ) {
+            $this->sendErrorResponse( null, $status_code );
+        } else {
+            if ( ! empty( $data ) && is_string( $data ) ) {
+                $response['message'] = $data;
             }
-        } elseif ( ! empty( $success_message ) ) {
-            $response['message'] = $success_message;
-        }
 
-        $ajax_redirect_url = filter_input( INPUT_POST, 'redirect_url' );
-        if ( $ajax_redirect_url && empty( $this->ajax_response['redirect_url'] ) ) {
-            $this->redirect_to( $ajax_redirect_url );
-        }
+            // Add additional data to the response.
+            if ( $this->additionalResponseData ) {
+                $response = array_merge( $response, $this->additionalResponseData );
+            }
 
-        // Add additional data to the response.
-        if ( $this->ajax_response ) {
-            $response = array_merge( $response, $this->ajax_response );
+            // Send response.
+            send_json( $response, $status_code );
         }
-
-        // Send response.
-        wp_send_json( $response );
-        die;
     }
 
     /**
@@ -78,52 +61,32 @@ class Generic {
      *
      * @return void
      */
-    public function send_ajax_error_response( $error_message = '' ): void {
+    public function sendErrorResponse( ?string $error_message = '', int $status_code = null ) : void {
         // Default value.
         $response = [ 'success' => false ];
 
         // Prepare errors data response.
-        if ( $this->error->has_errors() ) {
+        if ( $this->error->hasErrors() ) {
             // Create an array of error messages in format: error code => error message.
-            foreach ( $this->error->get_error_codes() as $code ) {
-                $response['errors'][ $code ] = $this->error->get_error_message( $code );
+            foreach ( $this->error->getErrorCodes() as $code ) {
+                $response['errors'][ $code ] = $this->error->getErrorMessage( $code );
             }
         } elseif ( ! empty( $error_message ) ) {
             $response['message'] = $error_message;
         }
 
         // Add additional data to the response.
-        if ( $this->ajax_response ) {
-            $response = array_merge( $response, $this->ajax_response );
+        if ( $this->additionalResponseData ) {
+            $response = array_merge( $response, $this->additionalResponseData );
         }
 
         // Send response.
-        wp_send_json( $response );
-        die;
-    }
-
-    /**
-     * Verifies the AJAX nonce and dies with an error response on failure.
-     *
-     * Replaces the repetitive three-line pattern:
-     *   if ( ! check_ajax_referer( $action, $field, false ) ) {
-     *       $this->send_ajax_error_response( 'Form expired...' );
-     *   }
-     *
-     * @param string $action The nonce action name.
-     * @param string $field  The $_REQUEST field that holds the nonce. Default 'nonce'.
-     *
-     * @return void Calls send_ajax_error_response() (which dies) on failure.
-     */
-    protected function verify_ajax_nonce( string $action, string $field = 'nonce' ): void {
-        if ( ! check_ajax_referer( $action, $field, false ) ) {
-            $this->send_ajax_error_response( 'Form expired. Please reload the page and try again.' );
-        }
+        send_json( $response, $status_code );
     }
 
     /**
      * Validate all fields in the form data against the validation rules.
-     * The validation rules described in S4S_Validator class.
+     * The validation rules described in Validator class.
      *
      * @param array $form_data        The form data to validate. The array should be in the format: [ 'field_key' => 'field_value' ].
      * @param array $validation_rules The validation rules for each field. The array should be in the format: [ 'field_key' => [ 'rule1', 'rule2', ... ] ].
@@ -131,9 +94,9 @@ class Generic {
      *
      * @return array The validated fields data. If a field is not presented in the validation rules, it will be removed from the result.
      */
-    public function filter_validate_all( array $form_data, array $validation_rules, array $options = [] ): array {
+    public function filterValidateAll( array $form_data, array $validation_rules, array $options = [] ) : array {
         $fields_data = [];
-        $options     = wp_parse_args(
+        $options     = parse_args(
             $options,
             [
                 'error_field_prefix' => '',
@@ -167,7 +130,7 @@ class Generic {
                 }
 
                 // Run the validation for the field.
-                $validation_result = $this->validate_field(
+                $validation_result = $this->validateField(
                     $field_value,
                     $validation_rules[ $field_key ],
                     $error_field_key
@@ -180,7 +143,7 @@ class Generic {
                     if ( is_array( $field_value ) && ! empty( $field_value ) ) {
                         // Run the validation for each subset of the field.
                         foreach ( $field_value as $subset_nn => $subset_fields ) {
-                            $fields_data[ $field_key ][ $subset_nn ] = $this->filter_validate_all(
+                            $fields_data[ $field_key ][ $subset_nn ] = $this->filterValidateAll(
                                 $subset_fields,
                                 $validation_rules[ $field_key ]['subfields_set'],
                                 [
@@ -205,10 +168,10 @@ class Generic {
      * @param string $error_field_key The error field key to add the error message to.
      *
      * @return bool True if the field is valid, false otherwise. Also, adds the error message to the error object.
-     * @uses S4S_Validator::validate()
+     * @uses Validator::validate()
      */
-    public function validate_field( mixed $value, array $rules, string $error_field_key ): bool {
-        $validation_result = S4S_Validator::validate( $value, $rules );
+    public function validateField( mixed $value, array $rules, string $error_field_key ) : bool {
+        $validation_result = Validator::validate( $value, $rules );
         if ( $validation_result !== true ) {
             $this->error->add( $error_field_key, $validation_result );
 
@@ -227,7 +190,7 @@ class Generic {
      *
      * @return string|AppError The uploaded file path or AppError object if an error occurred.
      */
-    public function upload_file( array $file_data, array $options = [], array $validation_rules = [] ): AppError|string {
+    public function uploadFile( array $file_data, array $options = [], array $validation_rules = [] ) : AppError|string {
         $overrides = [ 'test_form' => false ];
         if ( isset( $validation_rules['allowed_mimes'] ) ) {
             $overrides['mimes'] = $validation_rules['allowed_mimes'];
@@ -277,7 +240,7 @@ class Generic {
      *
      * @return bool True if the file is deleted, false otherwise.
      */
-    public function delete_file( string $file_path ): bool {
+    public function deleteFile( string $file_path ) : bool {
         $absolute_path = SUBSITE_UPLOAD_DIR . '/' . $file_path;
         if ( ! file_exists( $absolute_path ) ) {
             return false;
@@ -296,7 +259,7 @@ class Generic {
      * @return mixed The property value.
      * @throws RuntimeException If the property does not exist.
      */
-    public static function get( string $property ): mixed {
+    public static function get( string $property ) : mixed {
         if ( property_exists( __CLASS__, $property ) ) {
             return self::$$property;
         }
@@ -308,9 +271,9 @@ class Generic {
      *
      * @return string|null
      */
-    public function get_error_message(): ?string {
-        if ( $this->error->has_errors() ) {
-            return $this->error->get_error_message();
+    public function getErrorMessage() : ?string {
+        if ( $this->error->hasErrors() ) {
+            return $this->error->getErrorMessage();
         }
 
         return null;
@@ -321,19 +284,19 @@ class Generic {
      *
      * @return string|null The error code if errors exist, null otherwise.
      */
-    public function get_error_code(): ?string {
-        if ( $this->error->has_errors() ) {
-            return $this->error->get_error_code();
+    public function getErrorCode() : ?string {
+        if ( $this->error->hasErrors() ) {
+            return $this->error->getErrorCode();
         }
 
         return null;
     }
 
-    public function has_errors(): bool {
-        return $this->error->has_errors();
+    public function hasErrors() : bool {
+        return $this->error->hasErrors();
     }
 
-    public function add_error( string $code, string $message ): void {
+    public function addError( string $code, string $message ) : void {
         $this->error->add( $code, $message );
     }
 }
