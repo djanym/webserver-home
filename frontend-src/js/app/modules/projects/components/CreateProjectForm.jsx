@@ -5,55 +5,49 @@
 import React, { useState } from 'react';
 import { apiCreateProject } from '../projects-api';
 import { useAppConfig } from '../../../services/config-context';
-import { useForm } from '../../../services/forms';
+import { formFn } from '../../../services/forms';
 import { slugify } from '../../../services/helpers';
 
 const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
+    // App configuration context from the app backend.
     const config = useAppConfig();
-    const [pathType, setPathType] = useState('relative');
+    // Flag to track if slug was manually edited by the user.
+    const [wasSlugEdited, setSlugEdited] = useState(false);
+    // Constants related to the path selection
+    const [pathType, setPathType] = useState('relative'); // Project path type switch.
     const [customPathEnabled, setCustomPathEnabled] = useState(false);
     const [customRelativePath, setCustomRelativePath] = useState('');
     const [customAbsolutePath, setCustomAbsolutePath] = useState('');
-    const [slugEdited, setSlugEdited] = useState(false);
 
-    const validate = (values) => {
-        const errors = {};
-
-        if (!values.title?.trim()) {
-            errors.title = 'Project title is required.';
-        }
-
-        if (!values.slug?.trim()) {
-            errors.slug = 'Project slug is required.';
-        } else if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(values.slug)) {
-            errors.slug = 'Slug may only contain lowercase letters, numbers, and hyphens.';
-        }
-
-        if (!values.domain?.trim()) {
-            errors.domain = 'Virtual domain name is required.';
-        }
-
-        if (!values.client_name?.trim()) {
-            errors.client_name = 'Client name is required.';
-        }
-
-        if (customPathEnabled) {
-            if (pathType === 'relative' && !customRelativePath.trim()) {
-                errors.relative_path = 'Relative path is required.';
-            } else if (pathType === 'absolute' && !customAbsolutePath.trim()) {
-                errors.absolute_path = 'Absolute path is required.';
-            }
-        }
-
-        return errors;
+    // Validation rules for frontend only.
+    const projectValidationRules = {
+        title: [{ rule: 'required', message: 'Project title is required.' }],
+        slug: [
+            { rule: 'required', message: 'Project slug is required.' },
+            { rule: 'isSlug', message: 'Slug may only contain lowercase letters, numbers, and hyphens.' }
+        ],
+        domain: [{ rule: 'required', message: 'Virtual domain name is required.' }],
+        client_name: [{ rule: 'required', message: 'Client name is required.' }],
+        relative_path: [{
+            rule: 'required',
+            message: 'Relative path is required.',
+            when: (allValues) => allValues.custom_path_enabled && allValues.path_type === 'relative'
+        }],
+        absolute_path: [{
+            rule: 'required',
+            message: 'Absolute path is required.',
+            when: (allValues) => allValues.custom_path_enabled && allValues.path_type === 'absolute'
+        }]
     };
 
+    // What happens if backend returns success.
     const handleSuccess = () => {
+        alert('Project created successfully!');
         onProjectAdded();
         reset();
         setCustomPathEnabled(false);
-        setCustomRelativePath('');
-        setCustomAbsolutePath('');
+        // setCustomRelativePath('');
+        // setCustomAbsolutePath('');
         setPathType('relative');
         setSlugEdited(false);
     };
@@ -64,18 +58,26 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         setMultipleValues,
         handleSubmit,
         isSubmitting,
-        errors,
         generalError,
         getFieldProps,
-        hasFieldError,
+        clearFieldError,
+            // @todo: remove renderFieldError and dynamically insert the error element.
+        renderFieldError,
         reset
-    } = useForm({
+    } = formFn({
         initialValues: {
             title: '',
             slug: '',
             domain: '',
             client_name: ''
         },
+        validationRules: projectValidationRules,
+        extraValidationValuesCb: () => ({
+            custom_path_enabled: customPathEnabled,
+            path_type: pathType,
+            relative_path: customRelativePath,
+            absolute_path: customAbsolutePath
+        }),
         onSubmit: async (formValues) => {
             const submissionData = {
                 ...formValues,
@@ -86,30 +88,36 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
             };
             return apiCreateProject(submissionData);
         },
-        onSuccess: handleSuccess,
-        validate
+        onSuccess: handleSuccess
     });
 
+    // If title was changed, then slug should be updated as well.
     const handleTitleChange = (e) => {
         const { value } = e.target;
         const updates = { title: value };
 
-        if (!slugEdited) {
+        // In case slug was manually updated, then skip sync with title.
+        if (!wasSlugEdited) {
             updates.slug = slugify(value);
+            clearFieldError('slug');
         }
 
         setMultipleValues(updates);
     };
 
+    // If slug was changed manually, then don't sync it with title.
     const handleSlugChange = (e) => {
         setSlugEdited(true);
         setValue('slug', e.target.value);
     };
 
-    const handleCustomPathChange = (setter, field) => (e) => {
+    // When custom path fields are changed, we need to clear their errors as well, so we pass the field name to clear in the handler.
+    const handleCustomPathChange = (setter, fieldName) => (e) => {
         setter(e.target.value);
+        clearFieldError(fieldName);
     };
 
+    // Used just for showing the final path in the form. The actual path will be determined in the backend based on the submitted data.
     const getFinalPath = () => {
         const projectsRoot = config.projects_root_path || '';
         const slug = values.slug || '';
@@ -121,10 +129,10 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         if (pathType === 'relative') {
             const relPath = customRelativePath.trim();
             return `${projectsRoot}/${relPath}/${slug}`.replace(/\/+/g, '/');
-        } else {
-            const absPath = customAbsolutePath.trim();
-            return `${absPath}/${slug}`.replace(/\/+/g, '/');
         }
+
+        const absPath = customAbsolutePath.trim();
+        return `${absPath}/${slug}`.replace(/\/+/g, '/');
     };
 
     return (
@@ -137,11 +145,12 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                         <input
                             type="text"
                             id="project-title"
-                            {...getFieldProps('title')}
-                            onChange={handleTitleChange}
-                            placeholder="My Awesome Project"
+                            {...getFieldProps('title', {
+                                onChange: handleTitleChange
+                            })}
+                            placeholder="Unique Project Title"
                         />
-                        {hasFieldError('title') && <span className="error-message">{errors.title}</span>}
+                        {renderFieldError('title')}
                     </div>
                 </div>
 
@@ -151,13 +160,13 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                         <input
                             type="text"
                             id="project-slug"
-                            name="slug"
-                            value={values.slug}
-                            onChange={handleSlugChange}
+                            {...getFieldProps('slug', {
+                                validationRules: 'required,isSlug',
+                                onChange: handleSlugChange
+                            })}
                             placeholder="my-awesome-project"
-                            className={hasFieldError('slug') ? 'error' : ''}
                         />
-                        {hasFieldError('slug') && <span className="error-message">{errors.slug}</span>}
+                        {renderFieldError('slug')}
                     </div>
                 </div>
 
@@ -177,7 +186,15 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                                 <input
                                     type="checkbox"
                                     checked={customPathEnabled}
-                                    onChange={(e) => setCustomPathEnabled(e.target.checked)}
+                                    onChange={(e) => {
+                                        const isEnabled = e.target.checked;
+                                        setCustomPathEnabled(isEnabled);
+
+                                        if (!isEnabled) {
+                                            clearFieldError('relative_path');
+                                            clearFieldError('absolute_path');
+                                        }
+                                    }}
                                 />
                                 <span className="slider round"></span>
                             </label>
@@ -196,7 +213,10 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                                     name="pathType"
                                     value="relative"
                                     checked={pathType === 'relative'}
-                                    onChange={(e) => setPathType(e.target.value)}
+                                    onChange={(e) => {
+                                        setPathType(e.target.value);
+                                        clearFieldError('absolute_path');
+                                    }}
                                 />
                                 <label htmlFor="path-type-relative">Relative path</label>
                             </div>
@@ -208,9 +228,9 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                                     onChange={handleCustomPathChange(setCustomRelativePath, 'relative_path')}
                                     placeholder="e.g. clients/acme"
                                     disabled={pathType !== 'relative'}
-                                    className={(pathType !== 'relative' ? 'disabled' : '') + (hasFieldError('relative_path') ? ' error' : '')}
+                                    className={pathType !== 'relative' ? 'disabled' : ''}
                                 />
-                                {hasFieldError('relative_path') && <span className="error-message">{errors.relative_path}</span>}
+                                {renderFieldError('relative_path')}
                                 <small className="help-text">Relative to: {config.projects_root_path}</small>
                             </div>
                         </div>
@@ -223,7 +243,10 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                                     name="pathType"
                                     value="absolute"
                                     checked={pathType === 'absolute'}
-                                    onChange={(e) => setPathType(e.target.value)}
+                                    onChange={(e) => {
+                                        setPathType(e.target.value);
+                                        clearFieldError('relative_path');
+                                    }}
                                 />
                                 <label htmlFor="path-type-absolute">Absolute path</label>
                             </div>
@@ -235,9 +258,9 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                                     onChange={handleCustomPathChange(setCustomAbsolutePath, 'absolute_path')}
                                     placeholder="e.g. /var/www/projects"
                                     disabled={pathType !== 'absolute'}
-                                    className={(pathType !== 'absolute' ? 'disabled' : '') + (hasFieldError('absolute_path') ? ' error' : '')}
+                                    className={pathType !== 'absolute' ? 'disabled' : ''}
                                 />
-                                {hasFieldError('absolute_path') && <span className="error-message">{errors.absolute_path}</span>}
+                                {renderFieldError('absolute_path')}
                                 <small className="help-text">Full system path</small>
                             </div>
                         </div>
@@ -250,10 +273,10 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                         <input
                             type="text"
                             id="project-domain"
-                            {...getFieldProps('domain')}
+                            {...getFieldProps('domain', { validationRules: 'required' })}
                             placeholder="myproject.local"
                         />
-                        {hasFieldError('domain') && <span className="error-message">{errors.domain}</span>}
+                        {renderFieldError('domain')}
                     </div>
                 </div>
 
@@ -263,10 +286,10 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                         <input
                             type="text"
                             id="project-client"
-                            {...getFieldProps('client_name')}
+                            {...getFieldProps('client_name', { validationRules: 'required' })}
                             placeholder="Acme Corp"
                         />
-                        {hasFieldError('client_name') && <span className="error-message">{errors.client_name}</span>}
+                        {renderFieldError('client_name')}
                     </div>
                 </div>
 

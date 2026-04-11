@@ -1,5 +1,7 @@
 /**
  * Shared backend config for the Projects module.
+ * Uses React context to provide config data to components.
+ * The config is passed from the backend via an API call.
  */
 
 import { createContext, useContext } from 'react';

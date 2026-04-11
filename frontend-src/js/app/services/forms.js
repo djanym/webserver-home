@@ -1,20 +1,134 @@
 /**
- * Form submission and error handling utilities for React.
+ * Form submission and reusable validation utilities for React forms.
+ * Notes:
+ * <form> element should use `onSubmit={handleSubmit}` and then use it when call formFn().
  */
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
+
+// Built-in validation rule handlers that can be reused in any form.
+const BUILT_IN_VALIDATORS = {
+    required: (value) => {
+        if (typeof value === 'boolean') {
+            return value;
+        }
+
+        if (value === null || value === undefined) {
+            return false;
+        }
+
+        return String(value).trim().length > 0;
+    },
+    isSlug: (value) => /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(String(value || '').trim())
+};
+
+const DEFAULT_RULE_MESSAGES = {
+    required: 'This field is required.',
+    isSlug: 'Only lowercase letters, numbers, and hyphens are allowed.'
+};
+
+// Parses a string of comma-separated rules defined in the field attributes into an array of rule names.
+const parseRulesString = (rulesString = '') => {
+    return rulesString
+        .split(/[|,]/)
+        .map((rule) => rule.trim())
+        .filter(Boolean);
+};
+
+// Converts different rule formats into one predictable array shape.
+const normalizeRuleItem = (ruleItem) => {
+    if (!ruleItem) {
+        return [];
+    }
+
+    if (typeof ruleItem === 'string') {
+        return parseRulesString(ruleItem).map((ruleName) => ({
+            name: ruleName,
+            message: null,
+            when: null
+        }));
+    }
+
+    if (Array.isArray(ruleItem)) {
+        return ruleItem.flatMap(normalizeRuleItem);
+    }
+
+    if (typeof ruleItem === 'object') {
+        if (ruleItem.rules) {
+            return normalizeRuleItem(ruleItem.rules).map((normalized) => ({
+                ...normalized,
+                when: ruleItem.when || normalized.when,
+                message: ruleItem.message || normalized.message
+            }));
+        }
+
+        if (ruleItem.rule) {
+            return [{
+                name: ruleItem.rule,
+                message: ruleItem.message || null,
+                when: ruleItem.when || null
+            }];
+        }
+    }
+
+    return [];
+};
 
 /**
- * Hook for managing form submission state and backend error handling.
+ * Validates form values against provided rules. Returns an object with error messages per field, e.g. { title: 'Title is required.' }.
  *
- * @param {Object} options
- * @param {Function} options.onSubmit - Async function that submits the form data
- * @param {Function} options.onSuccess - Callback when submission succeeds (receives response data)
- * @param {Function} options.onError - Callback when submission fails (receives error)
- * @param {Object} options.initialErrors - Initial error state
- * @returns {Object}
+ * @param param0
+ * @param param0.values
+ * @param param0.rulesMap
+ * @param param0.validators
+ * @returns {{}}
  */
-export const useFormSubmit = ({
+const validateFields = ({ values, rulesMap, validators = {} }) => {
+    // Form-specific validators can override built-in ones when needed.
+    const mergedValidators = {
+        ...BUILT_IN_VALIDATORS,
+        ...validators
+    };
+
+    return Object.entries(rulesMap).reduce((acc, [fieldName, fieldRules]) => {
+        const normalizedRules = normalizeRuleItem(fieldRules);
+
+        // We stop at first failed rule per field to keep messages clear and stable.
+        for (let i = 0; i < normalizedRules.length; i += 1) {
+            const currentRule = normalizedRules[i];
+            const ruleName = currentRule.name;
+            const validateRule = mergedValidators[ruleName];
+
+            if (typeof validateRule !== 'function') {
+                continue;
+            }
+
+            if (typeof currentRule.when === 'function' && !currentRule.when(values)) {
+                continue;
+            }
+
+            const isValid = validateRule(values[fieldName], {
+                fieldName,
+                values,
+                ruleName
+            });
+
+            if (!isValid) {
+                acc[fieldName] = currentRule.message || DEFAULT_RULE_MESSAGES[ruleName] || 'Invalid value.';
+                break;
+            }
+        }
+
+        return acc;
+    }, {});
+};
+
+/**
+ * Collection of functions related to form submission: handling submit state, showing errors, running onSuccess/onError callbacks, etc.
+ * Used by formFn().
+ * Accepts custom onSubmit, onSuccess, onError callbacks and initialErrors when formFn() is called.
+ */
+export const formSubmitFn = ({
     onSubmit,
     onSuccess,
     onError,
@@ -24,40 +138,40 @@ export const useFormSubmit = ({
     const [errors, setErrors] = useState(initialErrors);
     const [generalError, setGeneralError] = useState(null);
 
-    /**
-     * Clear error for a specific field.
-     */
+    // Removes one field error so UI can react immediately when the user edits that field.
     const clearFieldError = useCallback((fieldName) => {
         setErrors((prev) => {
-            if (!prev[fieldName]) return prev;
-            const { [fieldName]: _, ...rest } = prev;
+            // If field is not present in the errors object, then there's nothing to clear.
+            if (!prev[fieldName]) {
+                return prev;
+            }
+
+            // We need to create a new object to trigger re-render.
+            const { [fieldName]: _removed, ...rest } = prev;
             return rest;
         });
     }, []);
 
-    /**
-     * Clear all errors.
-     */
     const clearAllErrors = useCallback(() => {
         setErrors({});
         setGeneralError(null);
     }, []);
 
-    /**
-     * Set field errors from backend response.
-     * Backend returns errors as: { fieldName: errorMessage, ... }
-     */
+    // Merges new backend/client errors into current error object.
     const setFieldErrors = useCallback((fieldErrors) => {
-        if (!fieldErrors || typeof fieldErrors !== 'object') return;
+        if (!fieldErrors || typeof fieldErrors !== 'object') {
+            return;
+        }
+
         setErrors((prev) => ({ ...prev, ...fieldErrors }));
     }, []);
 
-    /**
-     * Execute form submission.
-     */
     const executeSubmit = useCallback(async (data) => {
-        if (!onSubmit) return;
+        if (!onSubmit) {
+            return;
+        }
 
+        // Every submit starts from a clean visual error state.
         setIsSubmitting(true);
         setGeneralError(null);
         setErrors({});
@@ -65,13 +179,16 @@ export const useFormSubmit = ({
         try {
             const result = await onSubmit(data);
 
+            // onSuccess callback can be provided when formFn() is called.
             if (onSuccess) {
                 onSuccess(result);
             }
 
             return { success: true, data: result };
         } catch (err) {
-            const fieldErrors = err?.validationErrors || err?.errors;
+            // Backend may return field errors under `errors`.
+            const fieldErrors = err?.errors;
+            // Also, a general error message can be returned under `message`.
             const message = err?.message || 'An error occurred. Please try again.';
 
             if (fieldErrors && typeof fieldErrors === 'object') {
@@ -80,6 +197,7 @@ export const useFormSubmit = ({
 
             setGeneralError(message);
 
+            // onError callback can be provided when formFn() is called.
             if (onError) {
                 onError(err);
             }
@@ -90,18 +208,28 @@ export const useFormSubmit = ({
         }
     }, [onSubmit, onSuccess, onError, setFieldErrors]);
 
-    /**
-     * Get error message for a specific field.
-     */
     const getFieldError = useCallback((fieldName) => {
         return errors[fieldName] || null;
     }, [errors]);
 
-    /**
-     * Check if a field has an error.
-     */
     const hasFieldError = useCallback((fieldName) => {
         return !!errors[fieldName];
+    }, [errors]);
+
+    // Reusable renderer: returns <span className="error-message">...</span> only when a field has an error.
+    const renderFieldError = useCallback((fieldName, className = 'error-message') => {
+        // @todo: check why it's called everytime a field is changed and not only when submitted.
+        // Or we need to make it when a field is changing then only it should be checked immediately.
+        const fieldError = errors[fieldName];
+        console.log('renderFieldError', fieldName, fieldError);
+
+        if (!fieldError) {
+            return null;
+        }
+
+        return (
+            <span className={className}>{fieldError}</span>
+        );
     }, [errors]);
 
     return {
@@ -114,17 +242,16 @@ export const useFormSubmit = ({
         setFieldErrors,
         getFieldError,
         hasFieldError,
+        renderFieldError,
         setErrors
     };
 };
 
 /**
- * Hook for managing form state with change handlers.
- *
- * @param {Object} initialValues
- * @returns {Object}
+ * Collection of functions related to form fields: handling value change, settings/clearing values, etc.
+ * Used by formFn().
  */
-export const useFormState = (initialValues = {}) => {
+export const formFieldsFn = (initialValues = {}) => {
     const [values, setValues] = useState(initialValues);
     const [touched, setTouched] = useState({});
 
@@ -145,20 +272,24 @@ export const useFormState = (initialValues = {}) => {
         setValues((prev) => ({ ...prev, [name]: value }));
     }, []);
 
+    // Set multiple values at once.
     const setMultipleValues = useCallback((newValues) => {
         setValues((prev) => ({ ...prev, ...newValues }));
     }, []);
 
+    // Reset form to initial values. Useful for resetting form state after successful submission.
     const reset = useCallback(() => {
         setValues(initialValues);
         setTouched({});
     }, [initialValues]);
 
+    //
     const clear = useCallback(() => {
         const emptyValues = Object.keys(values).reduce((acc, key) => {
             acc[key] = '';
             return acc;
         }, {});
+
         setValues(emptyValues);
         setTouched({});
     }, [values]);
@@ -176,54 +307,149 @@ export const useFormState = (initialValues = {}) => {
 };
 
 /**
- * Combines useFormState and useFormSubmit for a complete form solution.
- *
- * @param {Object} options
- * @param {Object} options.initialValues - Initial form values
- * @param {Function} options.onSubmit - Submit handler
- * @param {Function} options.onSuccess - Success callback
- * @param {Function} options.onError - Error callback
- * @param {Function} options.validate - Optional validation function
- * @returns {Object}
+ * Main form functionality hook.
  */
-export const useForm = ({
-    initialValues = {},
-    onSubmit,
-    onSuccess,
-    onError,
-    validate
-} = {}) => {
-    const formState = useFormState(initialValues);
-    const formSubmit = useFormSubmit({ onSubmit, onSuccess, onError });
+export const formFn = (
+    {
+        initialValues = {},
+        onSubmit,
+        onSuccess,
+        onError,
+        /**
+        * Custom validation function that can be used to validate form values before submission.
+        * It receives all form values and should return an object with error messages per field,
+        * e.g. { title: 'Title is required.' }.
+        * This allows complex validations that can't be easily expressed via simple rules.
+        */
+        customValidateCb,
+        /**
+        * Validation rules should be passed.
+        */
+        validationRules = {},
+        //
+        validators,
+        extraValidationValuesCb
+    } = {}
+) => {
+    // Hook functionality related to form fields, fields state, etc.
+    const formFields = formFieldsFn(initialValues);
+    // Hook functionality related to submitting the form, showing errors, running on success callbacks.
+    const formSubmit = formSubmitFn({ onSubmit, onSuccess, onError });
 
+    // Each field can register rules from JSX via getFieldProps({ validationRules: 'required,isSlug' }).
+    const fieldRulesRef = useRef({});
+
+    const collectExtraValuesForValidation = useCallback(() => {
+        // Optional external values allow validating fields that are not stored in formFields.values.
+        const extraValues = typeof extraValidationValuesCb === 'function' ? extraValidationValuesCb() : {};
+        return {
+            ...formFields.values,
+            ...(extraValues || {})
+        };
+    }, [formFields.values, extraValidationValuesCb]);
+
+    // Runs before form submission in handleSubmit().
+    const validateForm = useCallback(
+        () => {
+            // Combines values between the form-passed values and optionally provided external values for validation.
+            // This allows validating fields that are not stored in formFields.values.
+            const combinedValues = collectExtraValuesForValidation();
+            // Global rules and per-field JSX rules are combined into one validation map.
+            const combinedRules = {
+                ...validationRules, // is passed when formFn() is called.
+                ...fieldRulesRef.current // ?
+            };
+
+            const ruleErrors = validateFields({
+                values: combinedValues,
+                rulesMap: combinedRules,
+                validators // ?
+            });
+
+            // Run custom validations. customValidateCb function can be passed wheb formFn() is called.
+            const customErrors = typeof customValidateCb === 'function'
+                ? (customValidateCb(combinedValues) || {})
+                : {};
+
+            // If both sources define same key, customErrors win because they are more specific.
+            return {
+                ...ruleErrors,
+                ...customErrors
+            };
+        },
+        // These are cached dependencies for re-running the function.
+        // If any of them changes, validation function will be re-created with new values.
+        [collectExtraValuesForValidation, validationRules, validators, customValidateCb]
+    );
+
+    // Fires when form is being submitted. Hooked in the <form onSubmit> and used in when formFn() called.
     const handleSubmit = useCallback(async (e) => {
+        // Prevent default <form> submission behavior.
         if (e && e.preventDefault) {
             e.preventDefault();
         }
 
-        if (validate) {
-            const validationErrors = validate(formState.values);
-            if (validationErrors && Object.keys(validationErrors).length > 0) {
-                formSubmit.setFieldErrors(validationErrors);
-                return { success: false, validationErrors };
-            }
+        formSubmit.clearAllErrors();
+
+        // Run client side validations.
+        const validationErrors = validateForm();
+
+        // Block submit when client-side validation fails.
+        if (Object.keys(validationErrors).length > 0) {
+            formSubmit.setFieldErrors(validationErrors);
+            return { success: false, validationErrors };
         }
 
-        return formSubmit.executeSubmit(formState.values);
-    }, [formState.values, validate, formSubmit]);
+        // If no errors, then submit. Backend check also will happen.
+        return formSubmit.executeSubmit(formFields.values);
+    }, [formSubmit, validateForm, formFields.values]);
 
-    const getFieldProps = useCallback((name) => ({
-        name,
-        value: formState.values[name] || '',
-        onChange: formState.handleChange,
-        onBlur: formState.handleBlur,
-        className: formSubmit.hasFieldError(name) ? 'error' : ''
-    }), [formState, formSubmit]);
+    // Shared field props builder: attaches value, handlers, error class, and rule registration.
+    const getFieldProps = useCallback((name, options = {}) => {
+        const {
+            onChange,
+            onBlur,
+            className = '',
+            validationRules: rules,
+            ...rest
+        } = options;
+
+        if (rules) {
+            // Rules are registered once field props are requested by the component.
+            fieldRulesRef.current[name] = rules;
+        }
+
+        return {
+            name,
+            value: formFields.values[name] || '',
+            onChange: (e) => {
+                if (onChange) {
+                    onChange(e);
+                } else {
+                    formFields.handleChange(e);
+                }
+
+                formSubmit.clearFieldError(name);
+            },
+            onBlur: (e) => {
+                formFields.handleBlur(e);
+
+                if (onBlur) {
+                    onBlur(e);
+                }
+            },
+            className: [className, formSubmit.hasFieldError(name) ? 'error' : '']
+                .filter(Boolean)
+                .join(' '),
+            ...rest
+        };
+    }, [formFields, formSubmit]);
 
     return {
-        ...formState,
+        ...formFields,
         ...formSubmit,
         handleSubmit,
-        getFieldProps
+        getFieldProps,
+        validateForm
     };
 };
