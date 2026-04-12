@@ -7,6 +7,7 @@ import { apiCreateProject } from '../projects-api';
 import { useAppConfig } from '../../../services/config-context';
 import { formFn } from '../../../services/forms';
 import { slugify } from '../../../services/helpers';
+import ManagedForm from '../../../components/ManagedForm';
 
 const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
     // App configuration context from the app backend.
@@ -43,16 +44,7 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         setSlugEdited(false);
     };
 
-    const {
-        values,
-        setValue,
-        setMultipleValues,
-        initFormFn,
-        FormField,
-        FormActions,
-        clearFieldError,
-        reset
-    } = formFn({
+    const form = formFn({
         validationRules: projectValidationRules,
         onSubmit: async (formValues) => {
             // Explicit conversion to boolean to handle empty string values.
@@ -71,6 +63,16 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         },
         onSuccess: handleSuccess
     });
+
+    const {
+        values,
+        setValue,
+        setMultipleValues,
+        FormField,
+        FormActions,
+        clearFieldError,
+        reset
+    } = form;
 
     const customPathEnabled = !!values.custom_path_enabled;
     const pathType = values.path_type || 'relative';
@@ -126,7 +128,7 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
     return (
         <div className="add-project-form-wrapper">
             <h2 className="form-title">Add New Project</h2>
-            <form {...initFormFn({ className: 'add-project-form' })}>
+            <ManagedForm form={form} className="add-project-form">
                 <div className="form-row">
                     <div className="form-group">
                         <label htmlFor="project-title">Project Title *</label>
@@ -311,7 +313,7 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                     submitLabel="Create Project"
                     submittingLabel="Creating..."
                 />
-            </form>
+            </ManagedForm>
         </div>
     );
 };
