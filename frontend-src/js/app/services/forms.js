@@ -255,16 +255,19 @@ export const formSubmitFn = ({
 
             return { success: true, data: result };
         } catch (err) {
-            // Backend may return field errors in different wrappers depending on source.
-            const fieldErrors = err?.errors || err?.validationErrors || err?.payload?.errors || err?.payload?.data?.errors;
-            // Also, a general error message can be returned under `message`.
-            const message = err?.message || err?.payload?.error_message || 'An error occurred. Please try again.';
+            // Backend returns field-level errors under `errors` key for validation failures.
+            const fieldErrors = err?.errors;
+            // General error message comes from `message` key.
+            const error_message = err?.message || null;
 
             if (fieldErrors && typeof fieldErrors === 'object') {
                 setFieldErrors(fieldErrors);
             }
 
-            setGeneralError(message);
+            // Show general message only if we have it.
+            if(error_message && typeof error_message === 'string' && error_message.length > 0){
+                setGeneralError(error_message);
+            }
 
             // onError callback can be provided when formFn() is called.
             if (onError) {

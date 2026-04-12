@@ -81,7 +81,9 @@ class Generic {
             foreach ( $this->error->getErrorCodes() as $code ) {
                 $response['errors'][ $code ] = $this->error->getErrorMessage( $code );
             }
-        } elseif ( ! empty( $error_message ) ) {
+        }
+
+        if ( ! empty( $error_message ) ) {
             $response['message'] = $error_message;
         }
 

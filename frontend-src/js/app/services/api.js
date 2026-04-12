@@ -47,8 +47,8 @@ const resolveApiUrl = (apiRoute) => {
     return `${API_BASE_URL}/${normalizedRoute}`;
 };
 
-const buildApiError = (message, payload = null, status = null) => {
-    const error = new Error(message || 'Request failed.');
+const buildApiError = (payload = null, message = null, status = null) => {
+    const error = new Error(message || null);
 
     if (status !== null) {
         error.status = status;
@@ -58,12 +58,7 @@ const buildApiError = (message, payload = null, status = null) => {
         error.payload = payload;
     }
 
-    const validationErrors = payload?.errors || payload?.data?.errors || null;
-
-    if (validationErrors && typeof validationErrors === 'object') {
-        error.errors = validationErrors;
-        error.validationErrors = validationErrors;
-    }
+    error.errors = payload?.errors || {};
 
     return error;
 };
@@ -103,14 +98,14 @@ export const apiRequest = async (apiRoute, data = null, method = 'GET', options 
         payload = null;
     }
 
-    if (!response.ok) {
-        const message = payload?.error || payload?.message || payload?.message || `Server error: ${response.status} ${response.statusText}`;
-        throw buildApiError(message, payload, response.status);
+    // Check for HTTP errors or backend-signaled failures in JSON payload.
+    const isHttpError = !response.ok;
+    const isBackendError = payload && payload.success !== true;
+
+    if (isHttpError || isBackendError) {
+        throw buildApiError(payload, payload?.message || null, response.status);
     }
 
-    if (payload && payload.success === false) {
-        throw buildApiError(payload.error || payload.message || payload.message || 'Request failed.', payload, response.status);
-    }
 
     return payload;
 };

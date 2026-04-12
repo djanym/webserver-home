@@ -65,7 +65,7 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                 custom_path_enabled: customPathEnabled,
                 path_type: customPathEnabled ? pathType : null,
                 relative_path: customPathEnabled ? (formValues.relative_path || '') : null,
-                absolute_path: customPathEnabled ? (formValues.absolute_path || '') : null
+                absolute_path: customPathEnabled ? (formValues.absolute_path || null) : null
             };
 
             return apiCreateProject(submissionData);
