@@ -47,10 +47,9 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         values,
         setValue,
         setMultipleValues,
-        isSubmitting,
-        generalError,
         initFormFn,
         FormField,
+        FormActions,
         clearFieldError,
         reset
     } = formFn({
@@ -64,7 +63,7 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                 ...formValues,
                 custom_path_enabled: customPathEnabled,
                 path_type: customPathEnabled ? pathType : null,
-                relative_path: customPathEnabled ? (formValues.relative_path || '') : null,
+                relative_path: customPathEnabled ? (formValues.relative_path || null) : null,
                 absolute_path: customPathEnabled ? (formValues.absolute_path || null) : null
             };
 
@@ -307,32 +306,11 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                     </div>
                 </div>
 
-                {generalError && (
-                    <div className="form-error">{generalError}</div>
-                )}
-
-                <div className="form-actions">
-                    <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={onCancel}
-                        disabled={isSubmitting}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        className="btn btn-primary"
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? (
-                            <>
-                                <span className="button-spinner" aria-hidden="true"></span>
-                                <span>Creating...</span>
-                            </>
-                        ) : 'Create Project'}
-                    </button>
-                </div>
+                <FormActions
+                    onCancel={onCancel}
+                    submitLabel="Create Project"
+                    submittingLabel="Creating..."
+                />
             </form>
         </div>
     );

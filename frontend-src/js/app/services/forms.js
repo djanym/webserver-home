@@ -206,6 +206,7 @@ export const formSubmitFn = ({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState(initialErrors);
     const [generalError, setGeneralError] = useState(null);
+    const [generalMessage, setGeneralMessage] = useState(null);
 
     // Removes one field error so UI can react immediately when the user edits that field.
     const clearFieldError = useCallback((fieldName) => {
@@ -224,6 +225,7 @@ export const formSubmitFn = ({
     const clearAllErrors = useCallback(() => {
         setErrors({});
         setGeneralError(null);
+        setGeneralMessage(null);
     }, []);
 
     // Merges new backend/client errors into current error object.
@@ -243,10 +245,16 @@ export const formSubmitFn = ({
         // Every submit starts from a clean visual error state.
         setIsSubmitting(true);
         setGeneralError(null);
+        setGeneralMessage(null);
         setErrors({});
 
         try {
             const result = await onSubmit(data);
+
+            // Show general message only if we have it.
+            if (result?.message && typeof result.message === 'string' && result.message.length > 0) {
+                setGeneralMessage(result.message);
+            }
 
             // onSuccess callback can be provided when formFn() is called.
             if (onSuccess) {
@@ -307,6 +315,7 @@ export const formSubmitFn = ({
         isSubmitting,
         errors,
         generalError,
+        generalMessage,
         executeSubmit,
         clearFieldError,
         clearAllErrors,
@@ -314,6 +323,7 @@ export const formSubmitFn = ({
         getFieldError,
         hasFieldError,
         renderFieldError,
+        setGeneralMessage,
         setErrors
     };
 };
@@ -708,12 +718,84 @@ export const formFn = (
         };
     }, []);
 
+    const formActionsRuntimeRef = useRef({
+        isSubmitting: formSubmit.isSubmitting,
+        generalError: formSubmit.generalError,
+        generalMessage: formSubmit.generalMessage
+    });
+
+    formActionsRuntimeRef.current.isSubmitting = formSubmit.isSubmitting;
+    formActionsRuntimeRef.current.generalError = formSubmit.generalError;
+    formActionsRuntimeRef.current.generalMessage = formSubmit.generalMessage;
+
+    const FormActions = useMemo(() => {
+        return function FormActionsComponent({
+            className = 'form-actions',
+            submitLabel = 'Submit',
+            submittingLabel = 'Submitting...',
+            submitClassName = 'btn btn-primary',
+            cancelLabel = 'Cancel',
+            onCancel,
+            cancelClassName = 'btn btn-secondary',
+            errorClassName = 'form-error',
+            successClassName = 'form-success',
+            spinnerClassName = 'button-spinner',
+            children,
+            submitButtonProps = {},
+            cancelButtonProps = {}
+        }) {
+            const runtime = formActionsRuntimeRef.current;
+            const isSubmitting = runtime.isSubmitting;
+
+            return (
+                <div className={className}>
+                    {runtime.generalError && (
+                        <div className={errorClassName}>{runtime.generalError}</div>
+                    )}
+
+                    {runtime.generalMessage && (
+                        <div className={successClassName}>{runtime.generalMessage}</div>
+                    )}
+
+                    {typeof onCancel === 'function' && (
+                        <button
+                            type="button"
+                            className={cancelClassName}
+                            onClick={onCancel}
+                            disabled={isSubmitting}
+                            {...cancelButtonProps}
+                        >
+                            {cancelLabel}
+                        </button>
+                    )}
+
+                    {children}
+
+                    <button
+                        type="submit"
+                        className={submitClassName}
+                        disabled={isSubmitting}
+                        {...submitButtonProps}
+                    >
+                        {isSubmitting ? (
+                            <>
+                                <span className={spinnerClassName} aria-hidden="true"></span>
+                                <span>{submittingLabel}</span>
+                            </>
+                        ) : submitLabel}
+                    </button>
+                </div>
+            );
+        };
+    }, []);
+
     return {
         ...formFields,
         ...formSubmit,
         handleSubmit,
         initFormFn,
         FormField,
+        FormActions,
         validateForm
     };
 };
