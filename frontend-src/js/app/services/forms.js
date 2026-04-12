@@ -4,7 +4,7 @@
  * <form> element should use `onSubmit={handleSubmit}` and then use it when call formFn().
  */
 
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 
 // Built-in validation rule handlers that can be reused in any form.
 const BUILT_IN_VALIDATORS = {
@@ -72,6 +72,75 @@ const normalizeRuleItem = (ruleItem) => {
     }
 
     return [];
+};
+
+/**
+ * Reads a single form field value based on field type.
+*/
+const readFieldValue = (field) => {
+    if (field.type === 'checkbox') {
+        return !!field.checked;
+    }
+
+    if (field.tagName === 'SELECT' && field.multiple) {
+        return Array.from(field.selectedOptions || []).map((option) => option.value);
+    }
+
+    return field.value;
+};
+
+/**
+ * Scans all named controls in a form and creates a values object from current DOM values.
+ * Fields without [name] will be ignored.
+ */
+const collectFormValues = (formElement) => {
+    if (!formElement || !formElement.elements) {
+        return {};
+    }
+
+    const formFields = Array.from(formElement.elements).filter((field) => field && field.name && !field.disabled);
+
+    /**
+     * Count checkboxes by field name so grouped checkboxes can be collected as arrays.
+     * For example, if you have <input type="checkbox" name="features" value="a">
+     *     and <input type="checkbox" name="features" value="b">,
+     *     then checkboxGroupSizes['features'] will be 2,
+     *     so we know to collect them into an array like features: ['a', 'b'] when both are checked.
+     */
+    const checkboxGroupSizes = formFields.reduce((acc, field) => {
+        if (field.type !== 'checkbox') {
+            return acc;
+        }
+
+        acc[field.name] = (acc[field.name] || 0) + 1;
+        return acc;
+    }, {});
+
+    return formFields.reduce((acc, field) => {
+        if (field.type === 'radio') {
+            if (field.checked) {
+                acc[field.name] = field.value;
+            } else if (!(field.name in acc)) {
+                acc[field.name] = '';
+            }
+            return acc;
+        }
+
+        if (field.type === 'checkbox' && checkboxGroupSizes[field.name] > 1) {
+            if (!Array.isArray(acc[field.name])) {
+                acc[field.name] = [];
+            }
+
+            if (field.checked) {
+                acc[field.name].push(field.value);
+            }
+
+            return acc;
+        }
+
+        acc[field.name] = readFieldValue(field);
+        return acc;
+    }, {});
 };
 
 /**
@@ -221,7 +290,6 @@ export const formSubmitFn = ({
         // @todo: check why it's called everytime a field is changed and not only when submitted.
         // Or we need to make it when a field is changing then only it should be checked immediately.
         const fieldError = errors[fieldName];
-        console.log('renderFieldError', fieldName, fieldError);
 
         if (!fieldError) {
             return null;
@@ -251,9 +319,10 @@ export const formSubmitFn = ({
  * Collection of functions related to form fields: handling value change, settings/clearing values, etc.
  * Used by formFn().
  */
-export const formFieldsFn = (initialValues = {}) => {
-    const [values, setValues] = useState(initialValues);
+export const formFieldsFn = () => {
+    const [values, setValues] = useState({});
     const [touched, setTouched] = useState({});
+    const defaultValuesRef = useRef({});
 
     const handleChange = useCallback((e) => {
         const { name, value, type, checked } = e.target;
@@ -272,6 +341,28 @@ export const formFieldsFn = (initialValues = {}) => {
         setValues((prev) => ({ ...prev, [name]: value }));
     }, []);
 
+    const setDefaultValues = useCallback((defaultValues = {}) => {
+        const normalizedDefaults = (defaultValues && typeof defaultValues === 'object')
+            ? Object.entries(defaultValues).reduce((acc, [key, fieldValue]) => {
+                if (
+                    fieldValue
+                    && typeof fieldValue === 'object'
+                    && 'defaultValue' in fieldValue
+                ) {
+                    acc[key] = fieldValue.defaultValue;
+                    return acc;
+                }
+
+                acc[key] = fieldValue;
+                return acc;
+            }, {})
+            : {};
+
+        defaultValuesRef.current = normalizedDefaults;
+        setValues(normalizedDefaults);
+        setTouched({});
+    }, []);
+
     // Set multiple values at once.
     const setMultipleValues = useCallback((newValues) => {
         setValues((prev) => ({ ...prev, ...newValues }));
@@ -279,9 +370,9 @@ export const formFieldsFn = (initialValues = {}) => {
 
     // Reset form to initial values. Useful for resetting form state after successful submission.
     const reset = useCallback(() => {
-        setValues(initialValues);
+        setValues({ ...defaultValuesRef.current });
         setTouched({});
-    }, [initialValues]);
+    }, []);
 
     //
     const clear = useCallback(() => {
@@ -300,6 +391,7 @@ export const formFieldsFn = (initialValues = {}) => {
         handleChange,
         handleBlur,
         setValue,
+        setDefaultValues,
         setMultipleValues,
         reset,
         clear
@@ -311,7 +403,6 @@ export const formFieldsFn = (initialValues = {}) => {
  */
 export const formFn = (
     {
-        initialValues = {},
         onSubmit,
         onSuccess,
         onError,
@@ -328,25 +419,75 @@ export const formFn = (
         validationRules = {},
         //
         validators,
+        /**
+         * Used to push extra values to validation flow, if it relies on some extra value.
+         */
         extraValidationValuesCb
     } = {}
 ) => {
     // Hook functionality related to form fields, fields state, etc.
-    const formFields = formFieldsFn(initialValues);
+    const formFields = formFieldsFn();
     // Hook functionality related to submitting the form, showing errors, running on success callbacks.
     const formSubmit = formSubmitFn({ onSubmit, onSuccess, onError });
-
+    // Stores form DOM element so we can use its attributes, options, etc. here.
+    const formRef = useRef(null);
     // Each field can register rules from JSX via getFieldProps({ validationRules: 'required,isSlug' }).
     const fieldRulesRef = useRef({});
+
+    // Keep ref assignment side-effect free to avoid render loops from repeated callback ref invocations.
+    const setFormRef = useCallback((element) => {
+        formRef.current = element;
+    }, []);
+
+    const getFormValues = useCallback(() => {
+        const domValues = collectFormValues(formRef.current);
+        return {
+            ...formFields.values,
+            ...domValues
+        };
+    }, [formFields.values]);
 
     const collectExtraValuesForValidation = useCallback(() => {
         // Optional external values allow validating fields that are not stored in formFields.values.
         const extraValues = typeof extraValidationValuesCb === 'function' ? extraValidationValuesCb() : {};
         return {
-            ...formFields.values,
+            ...getFormValues(),
             ...(extraValues || {})
         };
-    }, [formFields.values, extraValidationValuesCb]);
+    }, [getFormValues, extraValidationValuesCb]);
+
+    // No need to track any form change?
+    // Delegated form-level change handler so plain inputs with `name` auto-sync with form state.
+    // const handleFormChange = useCallback((e) => {
+    //     const target = e?.target;
+    //
+    //     if (!target || !target.name || target.disabled) {
+    //         return;
+    //     }
+    //
+    //     if (target.type === 'radio' && !target.checked) {
+    //         return;
+    //     }
+    //
+    //     if (target.type === 'checkbox') {
+    //         const latestGroupValues = collectFormValues(formRef.current);
+    //         formFields.setValue(target.name, latestGroupValues[target.name]);
+    //     } else {
+    //         formFields.setValue(target.name, readFieldValue(target));
+    //     }
+    //
+    //     formSubmit.clearFieldError(target.name);
+    // }, [formFields, formSubmit]);
+
+    // Do we need this?
+    // Delegated blur handler marks touched fields when user leaves an input.
+    const handleFormBlur = useCallback((e) => {
+        if (!e?.target?.name) {
+            return;
+        }
+
+        formFields.handleBlur(e);
+    }, [formFields]);
 
     // Runs before form submission in handleSubmit().
     const validateForm = useCallback(
@@ -357,7 +498,7 @@ export const formFn = (
             // Global rules and per-field JSX rules are combined into one validation map.
             const combinedRules = {
                 ...validationRules, // is passed when formFn() is called.
-                ...fieldRulesRef.current // ?
+                ...fieldRulesRef.current // ? still need?
             };
 
             const ruleErrors = validateFields({
@@ -382,7 +523,7 @@ export const formFn = (
         [collectExtraValuesForValidation, validationRules, validators, customValidateCb]
     );
 
-    // Fires when form is being submitted. Hooked in the <form onSubmit> and used in when formFn() called.
+    // Fires when form is being submitted.
     const handleSubmit = useCallback(async (e) => {
         // Prevent default <form> submission behavior.
         if (e && e.preventDefault) {
@@ -391,7 +532,7 @@ export const formFn = (
 
         formSubmit.clearAllErrors();
 
-        // Run client side validations.
+        // Run form validations.
         const validationErrors = validateForm();
 
         // Block submit when client-side validation fails.
@@ -401,8 +542,53 @@ export const formFn = (
         }
 
         // If no errors, then submit. Backend check also will happen.
-        return formSubmit.executeSubmit(formFields.values);
-    }, [formSubmit, validateForm, formFields.values]);
+        return formSubmit.executeSubmit(getFormValues());
+    }, [formSubmit, validateForm, getFormValues]);
+
+    // Initialize form functionality. Attaches events handlers.
+    const initFormFn = useCallback((options = {}) => {
+        const {
+            ref,
+            onSubmit: onSubmitCustom,
+            onChange: onChangeCustom,
+            onBlur: onBlurCustom,
+            ...rest
+        } = options;
+
+        return {
+            ...rest,
+            ref: (element) => {
+                setFormRef(element);
+
+                if (typeof ref === 'function') {
+                    ref(element);
+                } else if (ref && typeof ref === 'object') {
+                    ref.current = element;
+                }
+            },
+            onSubmit: async (e) => {
+                if (onSubmitCustom) {
+                    onSubmitCustom(e);
+                }
+
+                return handleSubmit(e);
+            },
+            onChange: (e) => {
+                // handleFormChange(e);
+                if (onChangeCustom) {
+                    onChangeCustom(e);
+                }
+            },
+            onBlur: (e) => {
+                handleFormBlur(e);
+
+                if (onBlurCustom) {
+                    onBlurCustom(e);
+                }
+            }
+        };
+    }, [setFormRef, handleSubmit, handleFormBlur, formFields]);
+    // }, [setFormRef, handleSubmit, handleFormChange, handleFormBlur]);
 
     // Shared field props builder: attaches value, handlers, error class, and rule registration.
     const getFieldProps = useCallback((name, options = {}) => {
@@ -449,6 +635,7 @@ export const formFn = (
         ...formFields,
         ...formSubmit,
         handleSubmit,
+        initFormFn,
         getFieldProps,
         validateForm
     };

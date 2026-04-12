@@ -56,28 +56,28 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         values,
         setValue,
         setMultipleValues,
-        handleSubmit,
         isSubmitting,
         generalError,
+        initFormFn,
         getFieldProps,
         clearFieldError,
             // @todo: remove renderFieldError and dynamically insert the error element.
         renderFieldError,
         reset
     } = formFn({
-        initialValues: {
-            title: '',
-            slug: '',
-            domain: '',
-            client_name: ''
-        },
+        // initialValues: {
+        //     title: '',
+        //     slug: '',
+        //     domain: '',
+        //     client_name: ''
+        // },
         validationRules: projectValidationRules,
-        extraValidationValuesCb: () => ({
-            custom_path_enabled: customPathEnabled,
-            path_type: pathType,
-            relative_path: customRelativePath,
-            absolute_path: customAbsolutePath
-        }),
+        // extraValidationValuesCb: () => ({
+        //     custom_path_enabled: customPathEnabled,
+        //     path_type: pathType,
+        //     relative_path: customRelativePath,
+        //     absolute_path: customAbsolutePath
+        // }),
         onSubmit: async (formValues) => {
             const submissionData = {
                 ...formValues,
@@ -102,7 +102,9 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
             clearFieldError('slug');
         }
 
-        setMultipleValues(updates);
+        // setMultipleValues(updates);
+        // Directly change element value:
+        setValue('slug', slugify(value));
     };
 
     // If slug was changed manually, then don't sync it with title.
@@ -138,7 +140,7 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
     return (
         <div className="add-project-form-wrapper">
             <h2 className="form-title">Add New Project</h2>
-            <form className="add-project-form" onSubmit={handleSubmit}>
+            <form {...initFormFn({ className: 'add-project-form' })}>
                 <div className="form-row">
                     <div className="form-group">
                         <label htmlFor="project-title">Project Title *</label>
