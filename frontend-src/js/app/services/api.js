@@ -58,9 +58,10 @@ const buildApiError = (message, payload = null, status = null) => {
         error.payload = payload;
     }
 
-    const validationErrors = payload?.data?.errors;
+    const validationErrors = payload?.errors || payload?.data?.errors || null;
 
     if (validationErrors && typeof validationErrors === 'object') {
+        error.errors = validationErrors;
         error.validationErrors = validationErrors;
     }
 
@@ -103,12 +104,12 @@ export const apiRequest = async (apiRoute, data = null, method = 'GET', options 
     }
 
     if (!response.ok) {
-        const message = payload?.error || payload?.message || `Server error: ${response.status} ${response.statusText}`;
+        const message = payload?.error || payload?.message || payload?.message || `Server error: ${response.status} ${response.statusText}`;
         throw buildApiError(message, payload, response.status);
     }
 
     if (payload && payload.success === false) {
-        throw buildApiError(payload.error || payload.message || 'Request failed.', payload, response.status);
+        throw buildApiError(payload.error || payload.message || payload.message || 'Request failed.', payload, response.status);
     }
 
     return payload;

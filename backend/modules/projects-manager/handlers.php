@@ -36,14 +36,12 @@ function CreateProjectCb() : void {
     $manager      = ProjectsManager::get_instance();
     $project_data = $manager->tryCreateProject( $input );
 
-    if ( is_app_error( $project_data ) ) {
-        $status_code = 422;
-    } else {
-        $status_code = 201;
+    if ( false === $project_data || $manager->hasErrors() ) {
+        $manager->sendJsonResponse( [], 422 );
+        return;
     }
 
-//    send_json_success( [ 'project' => $project ], $status_code );
-    $manager->sendJsonResponse( [ 'project' => $project_data ], $status_code );
+    $manager->sendJsonResponse( [ 'project' => $project_data ], 201 );
 }
 
 function pmUpdateProject( string $id ) : void {

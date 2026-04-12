@@ -255,10 +255,10 @@ export const formSubmitFn = ({
 
             return { success: true, data: result };
         } catch (err) {
-            // Backend may return field errors under `errors`.
-            const fieldErrors = err?.errors;
+            // Backend may return field errors in different wrappers depending on source.
+            const fieldErrors = err?.errors || err?.validationErrors || err?.payload?.errors || err?.payload?.data?.errors;
             // Also, a general error message can be returned under `message`.
-            const message = err?.message || 'An error occurred. Please try again.';
+            const message = err?.message || err?.payload?.error_message || 'An error occurred. Please try again.';
 
             if (fieldErrors && typeof fieldErrors === 'object') {
                 setFieldErrors(fieldErrors);

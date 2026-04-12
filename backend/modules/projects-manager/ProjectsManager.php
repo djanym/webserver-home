@@ -90,7 +90,7 @@ class ProjectsManager extends Generic {
      * @return array|false Created project data.
      */
     public function tryCreateProject( array $input_data ) : array|false {
-//        $input_data = $this->normalizeCreateInput( $input_data );
+        sleep( 2 );
 
         // Sanitize and validate provided fields data.
         $validated_data = $this->filterValidateAll( $input_data, $this->createProjectFields );
