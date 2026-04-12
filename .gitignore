@@ -27,6 +27,6 @@ yarn-error.log*
 
 bundle-stats.html
 bundle-stats.json
-/.abacusai/
+.abacusai/
 tasks.txt
 workspace.code-workspace
