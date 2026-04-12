@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
+import FormActionsBase from '../components/FormActionsBase';
 
 // Built-in validation rule handlers that can be reused in any form.
 const BUILT_IN_VALIDATORS = {
@@ -718,76 +719,16 @@ export const formFn = (
         };
     }, []);
 
-    const formActionsRuntimeRef = useRef({
-        isSubmitting: formSubmit.isSubmitting,
-        generalError: formSubmit.generalError,
-        generalMessage: formSubmit.generalMessage
-    });
-
-    formActionsRuntimeRef.current.isSubmitting = formSubmit.isSubmitting;
-    formActionsRuntimeRef.current.generalError = formSubmit.generalError;
-    formActionsRuntimeRef.current.generalMessage = formSubmit.generalMessage;
-
-    const FormActions = useMemo(() => {
-        return function FormActionsComponent({
-            className = 'form-actions',
-            submitLabel = 'Submit',
-            submittingLabel = 'Submitting...',
-            submitClassName = 'btn btn-primary',
-            cancelLabel = 'Cancel',
-            onCancel,
-            cancelClassName = 'btn btn-secondary',
-            errorClassName = 'form-error',
-            successClassName = 'form-success',
-            spinnerClassName = 'button-spinner',
-            children,
-            submitButtonProps = {},
-            cancelButtonProps = {}
-        }) {
-            const runtime = formActionsRuntimeRef.current;
-            const isSubmitting = runtime.isSubmitting;
-
-            return (
-                <div className={className}>
-                    {runtime.generalError && (
-                        <div className={errorClassName}>{runtime.generalError}</div>
-                    )}
-
-                    {runtime.generalMessage && (
-                        <div className={successClassName}>{runtime.generalMessage}</div>
-                    )}
-
-                    {typeof onCancel === 'function' && (
-                        <button
-                            type="button"
-                            className={cancelClassName}
-                            onClick={onCancel}
-                            disabled={isSubmitting}
-                            {...cancelButtonProps}
-                        >
-                            {cancelLabel}
-                        </button>
-                    )}
-
-                    {children}
-
-                    <button
-                        type="submit"
-                        className={submitClassName}
-                        disabled={isSubmitting}
-                        {...submitButtonProps}
-                    >
-                        {isSubmitting ? (
-                            <>
-                                <span className={spinnerClassName} aria-hidden="true"></span>
-                                <span>{submittingLabel}</span>
-                            </>
-                        ) : submitLabel}
-                    </button>
-                </div>
-            );
-        };
-    }, []);
+    const FormActions = useCallback((props) => {
+        return (
+            <FormActionsBase
+                isSubmitting={formSubmit.isSubmitting}
+                generalError={formSubmit.generalError}
+                generalMessage={formSubmit.generalMessage}
+                {...props}
+            />
+        );
+    }, [formSubmit.isSubmitting, formSubmit.generalError, formSubmit.generalMessage]);
 
     return {
         ...formFields,
