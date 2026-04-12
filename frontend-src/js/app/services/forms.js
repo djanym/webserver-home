@@ -4,7 +4,7 @@
  * <form> element should use `onSubmit={handleSubmit}` and then use it when call formFn().
  */
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useMemo, useRef } from 'react';
 
 // Built-in validation rule handlers that can be reused in any form.
 const BUILT_IN_VALIDATORS = {
@@ -591,7 +591,7 @@ export const formFn = (
     // }, [setFormRef, handleSubmit, handleFormChange, handleFormBlur]);
 
     // Shared field props builder: attaches value, handlers, error class, and rule registration.
-    const getFieldProps = useCallback((name, options = {}) => {
+    const buildFieldProps = useCallback((name, options = {}) => {
         const {
             onChange,
             onBlur,
@@ -631,12 +631,86 @@ export const formFn = (
         };
     }, [formFields, formSubmit]);
 
+    // Keep latest field helpers in refs so FormField component identity stays stable.
+    const fieldRuntimeRef = useRef({
+        buildFieldProps,
+        renderFieldError: formSubmit.renderFieldError
+    });
+
+    fieldRuntimeRef.current.buildFieldProps = buildFieldProps;
+    fieldRuntimeRef.current.renderFieldError = formSubmit.renderFieldError;
+
+    // Declarative field wrapper that injects field props and auto-renders field error right after child input.
+    const FormField = useMemo(() => {
+        return function FormFieldComponent({
+        name,
+        rules,
+        className = '',
+        errorClassName = 'error-message',
+        bindValue = true,
+        onChange,
+        onBlur,
+        children,
+        ...rest
+        }) {
+            if (!React.isValidElement(children)) {
+                return children || null;
+            }
+
+            const runtime = fieldRuntimeRef.current;
+
+            const fieldProps = runtime.buildFieldProps(name, {
+                onChange,
+                onBlur,
+                className,
+                validationRules: rules,
+                ...rest
+            });
+
+            const childOnChange = children.props.onChange;
+            const childOnBlur = children.props.onBlur;
+            const childHasOwnValue = Object.prototype.hasOwnProperty.call(children.props, 'value');
+
+            const mergedProps = {
+                ...fieldProps,
+                ...children.props,
+                name,
+                className: [children.props.className, fieldProps.className].filter(Boolean).join(' '),
+                onChange: (e) => {
+                    fieldProps.onChange(e);
+
+                    if (typeof childOnChange === 'function') {
+                        childOnChange(e);
+                    }
+                },
+                onBlur: (e) => {
+                    fieldProps.onBlur(e);
+
+                    if (typeof childOnBlur === 'function') {
+                        childOnBlur(e);
+                    }
+                }
+            };
+
+            if (!bindValue || childHasOwnValue) {
+                delete mergedProps.value;
+            }
+
+            return (
+                <>
+                    {React.cloneElement(children, mergedProps)}
+                    {runtime.renderFieldError(name, errorClassName)}
+                </>
+            );
+        };
+    }, []);
+
     return {
         ...formFields,
         ...formSubmit,
         handleSubmit,
         initFormFn,
-        getFieldProps,
+        FormField,
         validateForm
     };
 };

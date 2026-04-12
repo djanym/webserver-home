@@ -13,11 +13,6 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
     const config = useAppConfig();
     // Flag to track if slug was manually edited by the user.
     const [wasSlugEdited, setSlugEdited] = useState(false);
-    // Constants related to the path selection
-    const [pathType, setPathType] = useState('relative'); // Project path type switch.
-    const [customPathEnabled, setCustomPathEnabled] = useState(false);
-    const [customRelativePath, setCustomRelativePath] = useState('');
-    const [customAbsolutePath, setCustomAbsolutePath] = useState('');
 
     // Validation rules for frontend only.
     const projectValidationRules = {
@@ -45,10 +40,6 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         alert('Project created successfully!');
         onProjectAdded();
         reset();
-        setCustomPathEnabled(false);
-        // setCustomRelativePath('');
-        // setCustomAbsolutePath('');
-        setPathType('relative');
         setSlugEdited(false);
     };
 
@@ -59,37 +50,33 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         isSubmitting,
         generalError,
         initFormFn,
-        getFieldProps,
+        FormField,
         clearFieldError,
-            // @todo: remove renderFieldError and dynamically insert the error element.
-        renderFieldError,
         reset
     } = formFn({
-        // initialValues: {
-        //     title: '',
-        //     slug: '',
-        //     domain: '',
-        //     client_name: ''
-        // },
         validationRules: projectValidationRules,
-        // extraValidationValuesCb: () => ({
-        //     custom_path_enabled: customPathEnabled,
-        //     path_type: pathType,
-        //     relative_path: customRelativePath,
-        //     absolute_path: customAbsolutePath
-        // }),
         onSubmit: async (formValues) => {
+            // Explicit conversion to boolean to handle empty string values.
+            const customPathEnabled = !!formValues.custom_path_enabled;
+            const pathType = formValues.path_type || 'relative';
+
             const submissionData = {
                 ...formValues,
                 custom_path_enabled: customPathEnabled,
                 path_type: customPathEnabled ? pathType : null,
-                relative_path: customPathEnabled ? customRelativePath : null,
-                absolute_path: customPathEnabled ? customAbsolutePath : null
+                relative_path: customPathEnabled ? (formValues.relative_path || '') : null,
+                absolute_path: customPathEnabled ? (formValues.absolute_path || '') : null
             };
+
             return apiCreateProject(submissionData);
         },
         onSuccess: handleSuccess
     });
+
+    const customPathEnabled = !!values.custom_path_enabled;
+    const pathType = values.path_type || 'relative';
+    const customRelativePath = values.relative_path || '';
+    const customAbsolutePath = values.absolute_path || '';
 
     // If title was changed, then slug should be updated as well.
     const handleTitleChange = (e) => {
@@ -102,9 +89,7 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
             clearFieldError('slug');
         }
 
-        // setMultipleValues(updates);
-        // Directly change element value:
-        setValue('slug', slugify(value));
+        setMultipleValues(updates);
     };
 
     // If slug was changed manually, then don't sync it with title.
@@ -113,9 +98,11 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         setValue('slug', e.target.value);
     };
 
-    // When custom path fields are changed, we need to clear their errors as well, so we pass the field name to clear in the handler.
-    const handleCustomPathChange = (setter, fieldName) => (e) => {
-        setter(e.target.value);
+    // When custom path fields are changed,
+    // we need to clear their errors as well,
+    // so we pass the field name to clear in the handler.
+    const handleCustomPathChange = (fieldName) => (e) => {
+        setValue(fieldName, e.target.value);
         clearFieldError(fieldName);
     };
 
@@ -144,31 +131,30 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                 <div className="form-row">
                     <div className="form-group">
                         <label htmlFor="project-title">Project Title *</label>
-                        <input
-                            type="text"
-                            id="project-title"
-                            {...getFieldProps('title', {
-                                onChange: handleTitleChange
-                            })}
-                            placeholder="Unique Project Title"
-                        />
-                        {renderFieldError('title')}
+                        <FormField name="title" rules="required" onChange={handleTitleChange}>
+                            <input
+                                type="text"
+                                id="project-title"
+                                placeholder="Unique Project Title"
+                            />
+                        </FormField>
                     </div>
                 </div>
 
                 <div className="form-row">
                     <div className="form-group">
                         <label htmlFor="project-slug">Project Slug *</label>
-                        <input
-                            type="text"
-                            id="project-slug"
-                            {...getFieldProps('slug', {
-                                validationRules: 'required,isSlug',
-                                onChange: handleSlugChange
-                            })}
-                            placeholder="my-awesome-project"
-                        />
-                        {renderFieldError('slug')}
+                        <FormField
+                            name="slug"
+                            rules="required,isSlug"
+                            onChange={handleSlugChange}
+                        >
+                            <input
+                                type="text"
+                                id="project-slug"
+                                placeholder="my-awesome-project"
+                            />
+                        </FormField>
                     </div>
                 </div>
 
@@ -185,19 +171,31 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                     <div className="form-group">
                         <div className="switch-wrapper">
                             <label className="switch">
-                                <input
-                                    type="checkbox"
-                                    checked={customPathEnabled}
+                                <FormField
+                                    name="custom_path_enabled"
+                                    bindValue={false}
                                     onChange={(e) => {
                                         const isEnabled = e.target.checked;
-                                        setCustomPathEnabled(isEnabled);
+                                        setValue('custom_path_enabled', isEnabled);
 
                                         if (!isEnabled) {
+                                            setMultipleValues({
+                                                path_type: 'relative',
+                                                relative_path: '',
+                                                absolute_path: ''
+                                            });
                                             clearFieldError('relative_path');
                                             clearFieldError('absolute_path');
+                                        } else if (!values.path_type) {
+                                            setValue('path_type', 'relative');
                                         }
                                     }}
-                                />
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={customPathEnabled}
+                                    />
+                                </FormField>
                                 <span className="slider round"></span>
                             </label>
                             <span className="switch-label">Enable custom path</span>
@@ -209,60 +207,74 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                     <div className="custom-path-fields">
                         <div className="form-row form-option">
                             <div className="form-group radio-group">
-                                <input
-                                    type="radio"
-                                    id="path-type-relative"
-                                    name="pathType"
-                                    value="relative"
-                                    checked={pathType === 'relative'}
+                                <FormField
+                                    name="path_type"
+                                    bindValue={false}
                                     onChange={(e) => {
-                                        setPathType(e.target.value);
+                                        setValue('path_type', e.target.value);
                                         clearFieldError('absolute_path');
                                     }}
-                                />
+                                >
+                                    <input
+                                        type="radio"
+                                        id="path-type-relative"
+                                        value="relative"
+                                        checked={pathType === 'relative'}
+                                    />
+                                </FormField>
                                 <label htmlFor="path-type-relative">Relative path</label>
                             </div>
                             <div className="form-group">
-                                <input
-                                    type="text"
-                                    name="customRelativePath"
-                                    value={customRelativePath}
-                                    onChange={handleCustomPathChange(setCustomRelativePath, 'relative_path')}
-                                    placeholder="e.g. clients/acme"
-                                    disabled={pathType !== 'relative'}
-                                    className={pathType !== 'relative' ? 'disabled' : ''}
-                                />
-                                {renderFieldError('relative_path')}
+                                <FormField
+                                    name="relative_path"
+                                    bindValue={false}
+                                    onChange={handleCustomPathChange('relative_path')}
+                                >
+                                    <input
+                                        type="text"
+                                        value={customRelativePath}
+                                        placeholder="e.g. clients/acme"
+                                        disabled={pathType !== 'relative'}
+                                        className={pathType !== 'relative' ? 'disabled' : ''}
+                                    />
+                                </FormField>
                                 <small className="help-text">Relative to: {config.projects_root_path}</small>
                             </div>
                         </div>
 
                         <div className="form-row form-option">
                             <div className="form-group radio-group">
-                                <input
-                                    type="radio"
-                                    id="path-type-absolute"
-                                    name="pathType"
-                                    value="absolute"
-                                    checked={pathType === 'absolute'}
+                                <FormField
+                                    name="path_type"
+                                    bindValue={false}
                                     onChange={(e) => {
-                                        setPathType(e.target.value);
+                                        setValue('path_type', e.target.value);
                                         clearFieldError('relative_path');
                                     }}
-                                />
+                                >
+                                    <input
+                                        type="radio"
+                                        id="path-type-absolute"
+                                        value="absolute"
+                                        checked={pathType === 'absolute'}
+                                    />
+                                </FormField>
                                 <label htmlFor="path-type-absolute">Absolute path</label>
                             </div>
                             <div className="form-group">
-                                <input
-                                    type="text"
-                                    name="customAbsolutePath"
-                                    value={customAbsolutePath}
-                                    onChange={handleCustomPathChange(setCustomAbsolutePath, 'absolute_path')}
-                                    placeholder="e.g. /var/www/projects"
-                                    disabled={pathType !== 'absolute'}
-                                    className={pathType !== 'absolute' ? 'disabled' : ''}
-                                />
-                                {renderFieldError('absolute_path')}
+                                <FormField
+                                    name="absolute_path"
+                                    bindValue={false}
+                                    onChange={handleCustomPathChange('absolute_path')}
+                                >
+                                    <input
+                                        type="text"
+                                        value={customAbsolutePath}
+                                        placeholder="e.g. /var/www/projects"
+                                        disabled={pathType !== 'absolute'}
+                                        className={pathType !== 'absolute' ? 'disabled' : ''}
+                                    />
+                                </FormField>
                                 <small className="help-text">Full system path</small>
                             </div>
                         </div>
@@ -272,26 +284,26 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                 <div className="form-row">
                     <div className="form-group">
                         <label htmlFor="project-domain">Virtual Domain Name *</label>
-                        <input
-                            type="text"
-                            id="project-domain"
-                            {...getFieldProps('domain', { validationRules: 'required' })}
-                            placeholder="myproject.local"
-                        />
-                        {renderFieldError('domain')}
+                        <FormField name="domain" rules="required">
+                            <input
+                                type="text"
+                                id="project-domain"
+                                placeholder="myproject.local"
+                            />
+                        </FormField>
                     </div>
                 </div>
 
                 <div className="form-row">
                     <div className="form-group">
                         <label htmlFor="project-client">Client Name *</label>
-                        <input
-                            type="text"
-                            id="project-client"
-                            {...getFieldProps('client_name', { validationRules: 'required' })}
-                            placeholder="Acme Corp"
-                        />
-                        {renderFieldError('client_name')}
+                        <FormField name="client_name" rules="required">
+                            <input
+                                type="text"
+                                id="project-client"
+                                placeholder="Acme Corp"
+                            />
+                        </FormField>
                     </div>
                 </div>
 

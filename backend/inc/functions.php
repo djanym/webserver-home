@@ -401,6 +401,17 @@ function check_invalid_utf8( $text, $strip = false ) {
     return '';
 }
 
+/**
+ * Checks if value is any kind of true value including 1, true, yes, on.
+ *
+ * @param mixed $value
+ *
+ * @return bool
+ */
+function isTruthy( mixed $value ) : bool {
+    return in_array( strtolower( (string) $value ), [ '1', 'true', 'yes', 'on' ], true );
+}
+
 function get_listing_data( $dir = false ) {
     $ignore_files = [
         '.htaccess',

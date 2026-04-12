@@ -36,21 +36,21 @@ class ProjectsManager extends Generic {
 //    private string $serverRoot;
 
     private array $createProjectFields = [
-        'title'       => [
+        'title'               => [
             'always_required',
-            'max'           => 1,
+            'max'           => 60,
             'allowed_chars' => [ 'name_digits' ],
         ],
-        'slug'        => [
+        'slug'                => [
             'always_required',
             'max'           => 60,
             'allowed_chars' => [ 'slug' ],
         ],
-        'domain'      => [
+        'domain'              => [
             'always_required',
             'is_domain',
         ],
-        'client_name' => [
+        'client_name'         => [
             'always_required',
             'max'           => 60,
             'allowed_chars' => [ 'name_digits' ],
@@ -58,14 +58,14 @@ class ProjectsManager extends Generic {
         'custom_path_enabled' => [
             'bool',
         ],
-        'path_type' => [
+        'path_type'           => [
             'options' => [ 'relative', 'absolute' ],
         ],
-        'relative_path' => [
+        'relative_path'       => [
             'max' => 200,
             'is_path',
         ],
-        'absolute_path' => [
+        'absolute_path'       => [
             'max' => 200,
             'is_path',
         ],
@@ -83,28 +83,6 @@ class ProjectsManager extends Generic {
     }
 
     /**
-     * Get all projects.
-     *
-     * @return array List of projects.
-     */
-    public function getAllProjects() : array {
-        // @todo: Implement project retrieval from server-config.php.
-        return [];
-    }
-
-    /**
-     * Get a single project by ID.
-     *
-     * @param string $projectId Project ID.
-     *
-     * @return array|null Project data or null if not found.
-     */
-    public function getProject( string $projectId ) : ?array {
-        // @todo: Implement single project retrieval.
-        return null;
-    }
-
-    /**
      * Create a new project.
      *
      * @param array $input_data Project data from the form input.
@@ -112,9 +90,7 @@ class ProjectsManager extends Generic {
      * @return array|false Created project data.
      */
     public function tryCreateProject( array $input_data ) : array|false {
-        // Validate input data first.
-//        $errors = $this->validateFormData( $data );
-        $input_data['custom_path_enabled'] = 0;
+//        $input_data = $this->normalizeCreateInput( $input_data );
 
         // Sanitize and validate provided fields data.
         $validated_data = $this->filterValidateAll( $input_data, $this->createProjectFields );
@@ -124,8 +100,10 @@ class ProjectsManager extends Generic {
             return false;
         }
 
+        // @todo: add default value for the validation logic.
+        $validated_data['path_type'] = $validated_data['path_type'] ?? 'relative';
+
         // Run specific checks for the data.
-        // @llm-agent-task: finalize filterValidateSpecific() function.
         $validated_data = $this->filterValidateSpecific( $validated_data );
 
         // Check for errors after validation.
@@ -133,51 +111,88 @@ class ProjectsManager extends Generic {
             return false;
         }
 
-        // @llm-agent-task: Implement project creation logic.
-        $project = $this->createProject( $validated_data );
+        echo 123;
+        die;
+
+        return $this->createProject( $validated_data );
+    }
+
+    private function createProject( array $data ) : array|false {
+        $project_root_path = $this->resolveProjectRootPath( $data );
+        if ( false === $project_root_path ) {
+            return false;
+        }
+
+        if ( file_exists( $project_root_path ) ) {
+            $this->error->add( 'slug', 'Project path already exists.' );
+
+            return false;
+        }
+
+        if ( ! mkdir( $project_root_path, 0755, true ) ) {
+            $this->error->add( 'path_type', 'Failed to create project root folder.' );
+
+            return false;
+        }
+
+        $folders = $this->getProjectFoldersStructure( $data['slug'] );
+        foreach ( $folders as $folder_key => $folder_relative_path ) {
+            $folder_absolute_path = $this->normalizePath( $project_root_path . '/' . $folder_relative_path );
+            if ( ! is_dir( $folder_absolute_path ) && ! mkdir( $folder_absolute_path, 0755, true ) ) {
+                $this->error->add( $folder_key, 'Failed to create project folder.' );
+                $this->deleteDirectory( $project_root_path );
+
+                return false;
+            }
+        }
+
+        $document_root = $project_root_path;
+        if ( ! empty( $folders['www'] ) ) {
+            $document_root = $this->normalizePath( $project_root_path . '/' . $folders['www'] );
+        }
+
+        $created_at = gmdate( 'c' );
+        $project    = [
+            'id'                  => $data['slug'],
+            'title'               => $data['title'],
+            'slug'                => $data['slug'],
+            'domain'              => $data['domain'],
+            'client_name'         => $data['client_name'],
+            'custom_path_enabled' => isTruthy( $data['custom_path_enabled'] ),
+            'path_type'           => $data['path_type'] ?? 'relative',
+            'relative_path'       => $data['relative_path'] ?? '',
+            'absolute_path'       => $data['absolute_path'] ?? '',
+            'project_root_path'   => $project_root_path,
+            'document_root'       => $document_root,
+            'vhost_file'          => $this->normalizePath( config( 'path_to_apache_vhosts_dir', '' ) . '/' . $data['slug'] . '.conf' ),
+            'folders_structure'   => $folders,
+            'created_at'          => $created_at,
+            'updated_at'          => $created_at,
+        ];
+
+        if ( ! $this->writeProjectInfoFile( $project_root_path, $project ) ) {
+            $this->deleteDirectory( $project_root_path );
+
+            return false;
+        }
+
+        if ( ! $this->createApacheVhostFile( $project ) ) {
+            $this->deleteDirectory( $project_root_path );
+
+            return false;
+        }
+
+        if ( ! $this->addProjectPathToRegistry( $project_root_path ) ) {
+            @unlink( $project['vhost_file'] );
+            $this->deleteDirectory( $project_root_path );
+
+            return false;
+        }
 
         return $project;
     }
 
-    private function createProject( array $data ) {
-        /**
-         * @llm-agent-task: create function for adding project to the list of projects. something like addProject().
-         * App main projects info should be stored in the .webserver-home/projects-info.json file.
-         * The file should be in the following format:
-         *                {
-         * "lastUpdated": "2025-06-25T00:37:00.208Z",
-         * "projects": []
-         * }
-         *                projects info should contain only the list of path to project root folder.
-         *                project root folder contains project-info.json file.
-         * /
-
-        // ---
-
-        /**
-         * @llm-agent-task: Create function for creating project root folder.
-         *                Creating project-info.json file inside the project root folder.
-         *                Adding all neessary info to the project-info.json file.
-         *                Creating initial folder structure based on the path provided.
-         *                Initial folder structure is set in the app-config.php file in the project_folders_structure key.
-         *                The keys are reserved names. Values are the names of the folders. `{slug}` is placeholder for the project slug.
-         *                'docs' for the project documentation.
-         *                'www' for the project website files. will be used as a directory root for appache config.
-         *                'db-dump' for the database dumps.
-         *                But the folder structure should be stored in the project-info.json file. Because maybe the initial folder structure will be changed in the future. So to avoid any issues, the folder structure should be stored in the project-info.json file.
-         */
-
-        /**
-         * @llm-agent-task: Create function for creating apache virtual host configuration file.
-         *                the path is in the server-config.php file in the path_to_apache_vhosts_dir key.
-         *                the vhosts file sample is in server-config.php file in the path_to_vhost_tpl_file key.
-         *                the vhosts file name should be in the following format: {project_slug}.conf
-         *                the vhosts file has placeholders whoch should be replaced.
-         */
-    }
-
-
-     /**
+    /**
      * Update an existing project.
      *
      * @param string $projectId Project ID.
@@ -210,8 +225,7 @@ class ProjectsManager extends Generic {
      * @return bool True if project exists.
      */
     public function projectExists( string $projectId ) : bool {
-        // @todo: Implement project existence check.
-        return false;
+        return null !== $this->getProject( $projectId );
     }
 
     /**
@@ -222,11 +236,412 @@ class ProjectsManager extends Generic {
      * @return array Array of validation errors, empty if valid.
      */
     public function filterValidateSpecific( array $fields_data ) : array {
-        // @llm-agent-task: Check if the project name is already in use.
-        // @llm-agent-task: Check if project with the same slug already exists.
-        // @llm-agent-task: Check if the project path is already in use. Check depending on the path type.
-        // @llm-agent-task: Check if the domain is already in use.
-        // @llm-agent-task: Check if the custom path is already in use.
+        $existing_projects = $this->getAllProjects();
+
+        foreach ( $existing_projects as $existing_project ) {
+            if ( ! empty( $existing_project['title'] ) && strcasecmp( $existing_project['title'], $fields_data['title'] ) === 0 ) {
+                $this->error->add( 'title', 'Project title already exists.' );
+            }
+
+            if ( ! empty( $existing_project['slug'] ) && strcasecmp( $existing_project['slug'], $fields_data['slug'] ) === 0 ) {
+                $this->error->add( 'slug', 'Project slug already exists.' );
+            }
+
+            if ( ! empty( $existing_project['domain'] ) && strcasecmp( $existing_project['domain'], $fields_data['domain'] ) === 0 ) {
+                $this->error->add( 'domain', 'Domain already exists.' );
+            }
+        }
+
+        $path_type = $fields_data['path_type'] ?? '';
+        if ( isTruthy( $fields_data['custom_path_enabled'] ) ) {
+
+            if ( $path_type === 'relative' && empty( $fields_data['relative_path'] ) ) {
+                $this->error->add( 'relative_path', 'Relative path is required.' );
+            }
+
+            if ( $path_type === 'absolute' && empty( $fields_data['absolute_path'] ) ) {
+                $this->error->add( 'absolute_path', 'Absolute path is required.' );
+            }
+
+            // If custom path enabled, and set to relative or absolute, then clear unwanted errors.
+            if ( $path_type === 'relative' ) {
+                $this->error->remove( 'absolute_path' );
+            } elseif ( $path_type === 'absolute' ) {
+                $this->error->remove( 'relative_path' );
+            }
+        }
+
+        // If custom path disabled, clear relative and absolute paths errors.
+        if ( ! isTruthy( $fields_data['custom_path_enabled'] ) ) {
+            $this->error->remove( 'relative_path' );
+            $this->error->remove( 'absolute_path' );
+        }
+
+        if ( $this->error->hasErrors() ) {
+            return $fields_data;
+        }
+
+        $project_root_path = $this->resolveProjectRootPath( $fields_data );
+        if ( false === $project_root_path ) {
+            return $fields_data;
+        }
+
+        if ( file_exists( $project_root_path ) ) {
+            $this->error->add( 'slug', 'Project path already exists.' );
+        }
+
+        $registry = $this->readProjectsRegistry();
+        foreach ( $registry['projects'] as $existing_project_root_path ) {
+            if ( $this->normalizePath( $existing_project_root_path ) === $project_root_path ) {
+                $this->error->add( 'slug', 'Project path is already in use.' );
+                break;
+            }
+        }
+
         return $fields_data;
+    }
+
+    public function getAllProjects() : array {
+        $projects = [];
+        $registry = $this->readProjectsRegistry();
+
+        foreach ( $registry['projects'] as $project_root_path ) {
+            $project = $this->readProjectInfoByPath( $project_root_path );
+            if ( ! empty( $project ) ) {
+                $projects[] = $project;
+            }
+        }
+
+        return $projects;
+    }
+
+    public function getProject( string $projectId ) : ?array {
+        foreach ( $this->getAllProjects() as $project ) {
+            if ( ( $project['id'] ?? '' ) === $projectId || ( $project['slug'] ?? '' ) === $projectId ) {
+                return $project;
+            }
+        }
+
+        return null;
+    }
+
+    private function normalizeCreateInput( array $input_data ) : array {
+        $input_data['title']               = trim( (string) ( $input_data['title'] ?? '' ) );
+        $input_data['slug']                = trim( strtolower( (string) ( $input_data['slug'] ?? '' ) ) );
+        $input_data['domain']              = trim( strtolower( (string) ( $input_data['domain'] ?? '' ) ) );
+        $input_data['client_name']         = trim( (string) ( $input_data['client_name'] ?? '' ) );
+        $input_data['custom_path_enabled'] = isTruthy( $input_data['custom_path_enabled'] ?? false ) ? '1' : '0';
+
+        if ( $input_data['custom_path_enabled'] === '1' ) {
+            $input_data['path_type'] = trim( (string) ( $input_data['path_type'] ?? '' ) );
+
+            if ( $input_data['path_type'] === 'relative' ) {
+                $input_data['relative_path'] = trim( (string) ( $input_data['relative_path'] ?? '' ) );
+                unset( $input_data['absolute_path'] );
+            } elseif ( $input_data['path_type'] === 'absolute' ) {
+                $input_data['absolute_path'] = trim( (string) ( $input_data['absolute_path'] ?? '' ) );
+                unset( $input_data['relative_path'] );
+            } else {
+                unset( $input_data['relative_path'], $input_data['absolute_path'] );
+            }
+        } else {
+            unset( $input_data['path_type'], $input_data['relative_path'], $input_data['absolute_path'] );
+        }
+
+        return $input_data;
+    }
+
+    private function isTruthy( mixed $value ) : bool {
+        return in_array( strtolower( (string) $value ), [ '1', 'true', 'yes', 'on' ], true );
+    }
+
+    private function resolveProjectRootPath( array $project_data ) : string|false {
+        $projects_root = trim( (string) config( 'path_to_projects_root', '' ) );
+        if ( '' === $projects_root ) {
+            $this->error->add( 'path_type', 'Projects root path is not configured.' );
+
+            return false;
+        }
+
+        $slug = trim( (string) ( $project_data['slug'] ?? '' ) );
+        if ( '' === $slug ) {
+            $this->error->add( 'slug', 'Project slug is required.' );
+
+            return false;
+        }
+
+        $base_path = $projects_root;
+        if ( isTruthy( $project_data['custom_path_enabled'] ?? '0' ) ) {
+            $path_type = (string) ( $project_data['path_type'] ?? '' );
+            if ( 'absolute' === $path_type ) {
+                $base_path = trim( (string) ( $project_data['absolute_path'] ?? '' ) );
+                if ( '' === $base_path ) {
+                    $this->error->add( 'absolute_path', 'Absolute path is required.' );
+
+                    return false;
+                }
+            } elseif ( 'relative' === $path_type ) {
+                $relative_path = trim( (string) ( $project_data['relative_path'] ?? '' ), " \/" );
+                if ( '' === $relative_path ) {
+                    $this->error->add( 'relative_path', 'Relative path is required.' );
+
+                    return false;
+                }
+                $base_path = $projects_root . '/' . $relative_path;
+            } else {
+                $this->error->add( 'path_type', 'Invalid path type.' );
+
+                return false;
+            }
+        }
+
+        return $this->normalizePath( $base_path . '/' . $slug );
+    }
+
+    private function normalizePath( string $path ) : string {
+        $path = str_replace( '\\', '/', trim( $path ) );
+
+        if ( '' === $path ) {
+            return $path;
+        }
+
+        if ( preg_match( '/^[A-Za-z]:\//', $path ) ) {
+            $drive = substr( $path, 0, 2 );
+            $rest  = preg_replace( '#/+#', '/', substr( $path, 2 ) ) ? : '';
+
+            return $drive . $rest;
+        }
+
+        $has_leading_slash = str_starts_with( $path, '/' );
+        $path              = preg_replace( '#/+#', '/', $path ) ? : $path;
+        $path              = rtrim( $path, '/' );
+
+        if ( '' === $path ) {
+            return '/';
+        }
+
+        if ( $has_leading_slash && ! str_starts_with( $path, '/' ) ) {
+            $path = '/' . $path;
+        }
+
+        return $path;
+    }
+
+    private function getProjectRegistryPath() : string {
+        $projects_root = $this->normalizePath( (string) config( 'path_to_projects_root', '' ) );
+
+        return $projects_root . '/.webserver-home/projects-info.json';
+    }
+
+    private function readProjectsRegistry() : array {
+        $default_registry = [
+            'lastUpdated' => gmdate( 'c' ),
+            'projects'    => [],
+        ];
+
+        $registry_path = $this->getProjectRegistryPath();
+        if ( ! file_exists( $registry_path ) ) {
+            return $default_registry;
+        }
+
+        $json = file_get_contents( $registry_path );
+        if ( false === $json || '' === trim( $json ) ) {
+            return $default_registry;
+        }
+
+        $decoded = json_decode( $json, true );
+        if ( ! is_array( $decoded ) ) {
+            $this->error->add( 'projects_registry', 'Projects registry file is corrupted.' );
+
+            return $default_registry;
+        }
+
+        $projects = [];
+        if ( ! empty( $decoded['projects'] ) && is_array( $decoded['projects'] ) ) {
+            foreach ( $decoded['projects'] as $project_path ) {
+                if ( is_string( $project_path ) && '' !== trim( $project_path ) ) {
+                    $projects[] = $this->normalizePath( $project_path );
+                }
+            }
+        }
+
+        return [
+            'lastUpdated' => (string) ( $decoded['lastUpdated'] ?? $default_registry['lastUpdated'] ),
+            'projects'    => array_values( array_unique( $projects ) ),
+        ];
+    }
+
+    private function addProjectPathToRegistry( string $project_root_path ) : bool {
+        $registry                = $this->readProjectsRegistry();
+        $registry['projects'][]  = $this->normalizePath( $project_root_path );
+        $registry['projects']    = array_values( array_unique( $registry['projects'] ) );
+        $registry['lastUpdated'] = gmdate( 'c' );
+
+        return $this->writeProjectsRegistry( $registry );
+    }
+
+    private function writeProjectsRegistry( array $registry ) : bool {
+        $registry_path = $this->getProjectRegistryPath();
+        $registry_dir  = dirname( $registry_path );
+
+        if ( ! is_dir( $registry_dir ) && ! mkdir( $registry_dir, 0755, true ) ) {
+            $this->error->add( 'projects_registry', 'Failed to create projects registry directory.' );
+
+            return false;
+        }
+
+        $json = json_encode(
+            [
+                'lastUpdated' => $registry['lastUpdated'] ?? gmdate( 'c' ),
+                'projects'    => $registry['projects'] ?? [],
+            ],
+            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
+        );
+
+        if ( false === $json ) {
+            $this->error->add( 'projects_registry', 'Failed to encode projects registry data.' );
+
+            return false;
+        }
+
+        if ( false === file_put_contents( $registry_path, $json . PHP_EOL, LOCK_EX ) ) {
+            $this->error->add( 'projects_registry', 'Failed to write projects registry file.' );
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function getProjectFoldersStructure( string $slug ) : array {
+        $configured_structure = config( 'project_folders_structure', [] );
+        if ( ! is_array( $configured_structure ) || empty( $configured_structure ) ) {
+            return [ 'www' => $slug ];
+        }
+
+        $resolved_structure = [];
+        foreach ( $configured_structure as $key => $folder_name ) {
+            $resolved_structure[ $key ] = str_replace( '{slug}', $slug, (string) $folder_name );
+        }
+
+        return $resolved_structure;
+    }
+
+    private function writeProjectInfoFile( string $project_root_path, array $project ) : bool {
+        $project_info_path = $this->normalizePath( $project_root_path . '/project-info.json' );
+        $json              = json_encode( $project, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
+
+        if ( false === $json ) {
+            $this->error->add( 'project_info', 'Failed to encode project info file data.' );
+
+            return false;
+        }
+
+        if ( false === file_put_contents( $project_info_path, $json . PHP_EOL, LOCK_EX ) ) {
+            $this->error->add( 'project_info', 'Failed to write project info file.' );
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function createApacheVhostFile( array $project ) : bool {
+        $template_path = (string) config( 'path_to_vhost_tpl_file', '' );
+        if ( '' === $template_path || ! file_exists( $template_path ) ) {
+            $this->error->add( 'vhost', 'Virtual host template file does not exist.' );
+
+            return false;
+        }
+
+        $template_content = file_get_contents( $template_path );
+        if ( false === $template_content || '' === $template_content ) {
+            $this->error->add( 'vhost', 'Failed to read virtual host template file.' );
+
+            return false;
+        }
+
+        $vhosts_dir = trim( (string) config( 'path_to_apache_vhosts_dir', '' ) );
+        if ( '' === $vhosts_dir ) {
+            $this->error->add( 'vhost', 'Apache virtual hosts directory is not configured.' );
+
+            return false;
+        }
+
+        if ( ! is_dir( $vhosts_dir ) && ! mkdir( $vhosts_dir, 0755, true ) ) {
+            $this->error->add( 'vhost', 'Failed to create Apache virtual hosts directory.' );
+
+            return false;
+        }
+
+        $replacements = [
+            '{{SERVER_NAME}}'   => $project['domain'],
+            '{{DOCUMENT_ROOT}}' => $project['document_root'],
+            '{{PROJECT_SLUG}}'  => $project['slug'],
+            '{server_name}'     => $project['domain'],
+            '{document_root}'   => $project['document_root'],
+            '{project_slug}'    => $project['slug'],
+            '%server_name%'     => $project['domain'],
+            '%document_root%'   => $project['document_root'],
+            '%project_slug%'    => $project['slug'],
+        ];
+
+        $vhost_content = strtr( $template_content, $replacements );
+        $vhost_path    = $this->normalizePath( $vhosts_dir . '/' . $project['slug'] . '.conf' );
+
+        if ( false === file_put_contents( $vhost_path, $vhost_content, LOCK_EX ) ) {
+            $this->error->add( 'vhost', 'Failed to write Apache virtual host file.' );
+
+            return false;
+        }
+
+        return true;
+    }
+
+    private function readProjectInfoByPath( string $project_root_path ) : ?array {
+        $project_root_path = $this->normalizePath( $project_root_path );
+        $project_info_path = $this->normalizePath( $project_root_path . '/project-info.json' );
+
+        if ( ! file_exists( $project_info_path ) ) {
+            return null;
+        }
+
+        $json = file_get_contents( $project_info_path );
+        if ( false === $json || '' === trim( $json ) ) {
+            return null;
+        }
+
+        $decoded = json_decode( $json, true );
+        if ( ! is_array( $decoded ) ) {
+            return null;
+        }
+
+        return $decoded;
+    }
+
+    private function deleteDirectory( string $path ) : void {
+        if ( ! is_dir( $path ) ) {
+            return;
+        }
+
+        $items = scandir( $path );
+        if ( false === $items ) {
+            return;
+        }
+
+        foreach ( $items as $item ) {
+            if ( $item === '.' || $item === '..' ) {
+                continue;
+            }
+
+            $item_path = $path . '/' . $item;
+            if ( is_dir( $item_path ) ) {
+                $this->deleteDirectory( $item_path );
+            } elseif ( file_exists( $item_path ) ) {
+                @unlink( $item_path );
+            }
+        }
+
+        @rmdir( $path );
     }
 }

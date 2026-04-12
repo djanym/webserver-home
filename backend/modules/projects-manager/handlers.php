@@ -33,8 +33,8 @@ function CreateProjectCb() : void {
         send_json_error( 'Invalid request data.', 400 );
     }
 
-    $manager = ProjectsManager::get_instance();
-    $project_data  = $manager->tryCreateProject( $input );
+    $manager      = ProjectsManager::get_instance();
+    $project_data = $manager->tryCreateProject( $input );
 
     if ( is_app_error( $project_data ) ) {
         $status_code = 422;

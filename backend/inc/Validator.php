@@ -445,11 +445,6 @@ class Validator {
             }
         }
 
-        // Ensure path is not empty.
-        if ( trim( $value ) === '' ) {
-            return 'Invalid path: cannot be empty.';
-        }
-
         return true;
     }
 
