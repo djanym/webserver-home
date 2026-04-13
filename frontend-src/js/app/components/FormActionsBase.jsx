@@ -6,59 +6,62 @@ import React from 'react';
 
 const FormActionsBase = ({
     isSubmitting,
-    generalError,
-    generalMessage,
+    responseMessage,
+    responseType = 'success',
     className = 'form-actions',
+    actionButtonsRowClassName = 'action-buttons-row',
     submitLabel = 'Submit',
     submittingLabel = 'Submitting...',
     submitClassName = 'btn btn-primary',
     cancelLabel = 'Cancel',
     onCancel,
     cancelClassName = 'btn btn-secondary',
-    errorClassName = 'form-error',
-    successClassName = 'form-success',
+    responseClassName = 'response-container',
     spinnerClassName = 'button-spinner',
     children,
     submitButtonProps = {},
     cancelButtonProps = {}
 }) => {
+    const resolvedResponseType = ['error', 'success', 'info'].includes(responseType) ? responseType : 'success';
+    const hasResponseMessage = typeof responseMessage === 'string' && responseMessage.trim().length > 0;
+
     return (
         <div className={className}>
-            {generalError && (
-                <div className={errorClassName}>{generalError}</div>
-            )}
+            <div className={actionButtonsRowClassName}>
+                {typeof onCancel === 'function' && (
+                    <button
+                        type="button"
+                        className={cancelClassName}
+                        onClick={onCancel}
+                        disabled={isSubmitting}
+                        {...cancelButtonProps}
+                    >
+                        {cancelLabel}
+                    </button>
+                )}
 
-            {generalMessage && (
-                <div className={successClassName}>{generalMessage}</div>
-            )}
+                {children}
 
-            {typeof onCancel === 'function' && (
                 <button
-                    type="button"
-                    className={cancelClassName}
-                    onClick={onCancel}
+                    type="submit"
+                    className={submitClassName}
                     disabled={isSubmitting}
-                    {...cancelButtonProps}
+                    {...submitButtonProps}
                 >
-                    {cancelLabel}
+                    {isSubmitting ? (
+                        <>
+                            <span className={spinnerClassName} aria-hidden="true"></span>
+                            <span>{submittingLabel}</span>
+                        </>
+                    ) : submitLabel}
                 </button>
+            </div>
+
+            {hasResponseMessage && (
+                <div className={`${responseClassName} ${resolvedResponseType}`}>
+                    {responseMessage}
+                </div>
             )}
-
-            {children}
-
-            <button
-                type="submit"
-                className={submitClassName}
-                disabled={isSubmitting}
-                {...submitButtonProps}
-            >
-                {isSubmitting ? (
-                    <>
-                        <span className={spinnerClassName} aria-hidden="true"></span>
-                        <span>{submittingLabel}</span>
-                    </>
-                ) : submitLabel}
-            </button>
         </div>
     );
 };

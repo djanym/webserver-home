@@ -28,6 +28,16 @@ const DEFAULT_RULE_MESSAGES = {
     isSlug: 'Only lowercase letters, numbers, and hyphens are allowed.'
 };
 
+const RESPONSE_TYPES = ['error', 'success', 'info'];
+
+const normalizeResponseType = (type, fallback = 'success') => {
+    if (typeof type !== 'string') {
+        return fallback;
+    }
+
+    return RESPONSE_TYPES.includes(type) ? type : fallback;
+};
+
 // Parses a string of comma-separated rules defined in the field attributes into an array of rule names.
 const parseRulesString = (rulesString = '') => {
     return rulesString
@@ -206,8 +216,23 @@ export const formSubmitFn = ({
 } = {}) => {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errors, setErrors] = useState(initialErrors);
-    const [generalError, setGeneralError] = useState(null);
-    const [generalMessage, setGeneralMessage] = useState(null);
+    const [responseMessage, setResponseMessage] = useState(null);
+    const [responseType, setResponseType] = useState('success');
+
+    const clearResponse = useCallback(() => {
+        setResponseMessage(null);
+        setResponseType('success');
+    }, []);
+
+    const setResponse = useCallback((message, type = 'success') => {
+        if (typeof message !== 'string' || message.trim().length === 0) {
+            clearResponse();
+            return;
+        }
+
+        setResponseMessage(message);
+        setResponseType(normalizeResponseType(type));
+    }, [clearResponse]);
 
     // Removes one field error so UI can react immediately when the user edits that field.
     const clearFieldError = useCallback((fieldName) => {
@@ -225,9 +250,8 @@ export const formSubmitFn = ({
 
     const clearAllErrors = useCallback(() => {
         setErrors({});
-        setGeneralError(null);
-        setGeneralMessage(null);
-    }, []);
+        clearResponse();
+    }, [clearResponse]);
 
     // Merges new backend/client errors into current error object.
     const setFieldErrors = useCallback((fieldErrors) => {
@@ -245,16 +269,15 @@ export const formSubmitFn = ({
 
         // Every submit starts from a clean visual error state.
         setIsSubmitting(true);
-        setGeneralError(null);
-        setGeneralMessage(null);
+        clearResponse();
         setErrors({});
 
         try {
             const result = await onSubmit(data);
 
             // Show general message only if we have it.
-            if (result?.message && typeof result.message === 'string' && result.message.length > 0) {
-                setGeneralMessage(result.message);
+            if (result?.message && typeof result.message === 'string' && result.message.trim().length > 0) {
+                setResponse(result.message, 'success');
             }
 
             // onSuccess callback can be provided when formFn() is called.
@@ -274,8 +297,8 @@ export const formSubmitFn = ({
             }
 
             // Show general message only if we have it.
-            if(error_message && typeof error_message === 'string' && error_message.length > 0){
-                setGeneralError(error_message);
+            if (error_message && typeof error_message === 'string' && error_message.trim().length > 0) {
+                setResponse(error_message, 'error');
             }
 
             // onError callback can be provided when formFn() is called.
@@ -287,7 +310,7 @@ export const formSubmitFn = ({
         } finally {
             setIsSubmitting(false);
         }
-    }, [onSubmit, onSuccess, onError, setFieldErrors]);
+    }, [onSubmit, onSuccess, onError, setFieldErrors, clearResponse, setResponse]);
 
     const getFieldError = useCallback((fieldName) => {
         return errors[fieldName] || null;
@@ -315,8 +338,8 @@ export const formSubmitFn = ({
     return {
         isSubmitting,
         errors,
-        generalError,
-        generalMessage,
+        responseMessage,
+        responseType,
         executeSubmit,
         clearFieldError,
         clearAllErrors,
@@ -324,7 +347,8 @@ export const formSubmitFn = ({
         getFieldError,
         hasFieldError,
         renderFieldError,
-        setGeneralMessage,
+        setResponse,
+        setResponseMessage,
         setErrors
     };
 };
@@ -723,12 +747,12 @@ export const formFn = (
         return (
             <FormActionsBase
                 isSubmitting={formSubmit.isSubmitting}
-                generalError={formSubmit.generalError}
-                generalMessage={formSubmit.generalMessage}
+                responseMessage={formSubmit.responseMessage}
+                responseType={formSubmit.responseType}
                 {...props}
             />
         );
-    }, [formSubmit.isSubmitting, formSubmit.generalError, formSubmit.generalMessage]);
+    }, [formSubmit.isSubmitting, formSubmit.responseMessage, formSubmit.responseType]);
 
     return {
         ...formFields,
