@@ -145,7 +145,11 @@ class Generic {
                 $validation_result = $this->validateField(
                     $field_value,
                     $validation_rules[ $field_key ],
-                    $error_field_key
+                    $error_field_key,
+                    [
+                        'form_data' => $form_data,
+                        'field_key' => $field_key, // Why not $error_field_key? Because $error_field_key can be overridden by the validation rules, and we want to keep the original field key for the context of the validation rules. Should be confirmed!
+                    ]
                 );
 
                 // Check if the field has subfields set, then validate each of them.
@@ -178,12 +182,13 @@ class Generic {
      * @param mixed  $value           The value to validate.
      * @param array  $rules           The validation rules.
      * @param string $error_field_key The error field key to add the error message to.
+     * @param array  $context         Optional. Extra context for rule evaluation.
      *
      * @return bool True if the field is valid, false otherwise. Also, adds the error message to the error object.
      * @uses Validator::validate()
      */
-    public function validateField( mixed $value, array $rules, string $error_field_key ) : bool {
-        $validation_result = Validator::validate( $value, $rules );
+    public function validateField( mixed $value, array $rules, string $error_field_key, array $context = [] ) : bool {
+        $validation_result = Validator::validate( $value, $rules, $context );
         if ( $validation_result !== true ) {
             $this->error->add( $error_field_key, $validation_result );
 

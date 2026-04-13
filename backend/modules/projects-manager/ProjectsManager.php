@@ -62,11 +62,17 @@ class ProjectsManager extends Generic {
             'options' => [ 'relative', 'absolute' ],
         ],
         'relative_path'       => [
-            'max' => 200,
-            'is_path',
+//            'always_required',
+'max' => 200,
+'is_path',
         ],
         'absolute_path'       => [
-            'max' => 200,
+            'when' => [
+                'another_field'          => 'path_type',
+                'another_field_value_is' => 'absolute',
+            ],
+            'always_required',
+            'max'  => 200,
             'is_path',
         ],
     ];
@@ -88,9 +94,18 @@ class ProjectsManager extends Generic {
      * @param array $input_data Project data from the form input.
      *
      * @return array|false Created project data.
+     * @throws \JsonException
      */
     public function tryCreateProject( array $input_data ) : array|false {
-        sleep( 2 );
+        echo '<pre>';
+        $input_data['custom_path_enabled'] = 1;
+        $input_data['path_type']           = 'absolute';
+        $input_data['path_type']           = 'relative';
+        $input_data['relative_path']       = '';
+        unset( $input_data['relative_path'] );
+        unset( $input_data['absolute_path'] );
+        print_r( $input_data );
+        // Test.
 
         // Sanitize and validate provided fields data.
         $validated_data = $this->filterValidateAll( $input_data, $this->createProjectFields );
@@ -101,7 +116,11 @@ class ProjectsManager extends Generic {
         }
 
         // @todo: add default value for the validation logic.
-        $validated_data['path_type'] = $validated_data['path_type'] ?? 'relative';
+//        $validated_data['path_type'] = $validated_data['path_type'] ?? 'relative';
+
+        $validated_data['project_root_path'] = $this->prepareProjectRootPath( $validated_data );
+
+        echo 'Project root path: ' . $validated_data['project_root_path'] . "\n\r";
 
         // Run specific checks for the data.
         $validated_data = $this->filterValidateSpecific( $validated_data );
@@ -234,6 +253,7 @@ class ProjectsManager extends Generic {
      * @param array $fields_data Project data to validate.
      *
      * @return array Array of validation errors, empty if valid.
+     * @throws \JsonException
      */
     public function filterValidateSpecific( array $fields_data ) : array {
         $existing_projects = $this->getAllProjects();
@@ -255,47 +275,54 @@ class ProjectsManager extends Generic {
         $path_type = $fields_data['path_type'] ?? '';
         if ( isTruthy( $fields_data['custom_path_enabled'] ) ) {
 
-            if ( $path_type === 'relative' && empty( $fields_data['relative_path'] ) ) {
-                $this->error->add( 'relative_path', 'Relative path is required.' );
-            }
+//            if ( $path_type === 'relative' && empty( $fields_data['relative_path'] ) ) {
+//                $this->error->add( 'relative_path', 'Relative path is required.' );
+//            }
 
-            if ( $path_type === 'absolute' && empty( $fields_data['absolute_path'] ) ) {
-                $this->error->add( 'absolute_path', 'Absolute path is required.' );
-            }
+//            if ( $path_type === 'absolute' && empty( $fields_data['absolute_path'] ) ) {
+//                $this->error->add( 'absolute_path', 'Absolute path is required.' );
+//            }
 
             // If custom path enabled, and set to relative or absolute, then clear unwanted errors.
-            if ( $path_type === 'relative' ) {
-                $this->error->remove( 'absolute_path' );
-            } elseif ( $path_type === 'absolute' ) {
-                $this->error->remove( 'relative_path' );
-            }
+//            if ( $path_type === 'relative' ) {
+//                $this->error->remove( 'absolute_path' );
+//            } elseif ( $path_type === 'absolute' ) {
+//                $this->error->remove( 'relative_path' );
+//            }
         }
 
         // If custom path disabled, clear relative and absolute paths errors.
-        if ( ! isTruthy( $fields_data['custom_path_enabled'] ) ) {
-            $this->error->remove( 'relative_path' );
-            $this->error->remove( 'absolute_path' );
-        }
+//        if ( ! isTruthy( $fields_data['custom_path_enabled'] ) ) {
+//            $this->error->remove( 'relative_path' );
+//            $this->error->remove( 'absolute_path' );
+//        }
 
         if ( $this->error->hasErrors() ) {
             return $fields_data;
         }
 
-        $project_root_path = $this->resolveProjectRootPath( $fields_data );
-        if ( false === $project_root_path ) {
+        // Check if project root path can be determined.
+        if ( empty( $fields_data['project_root_path'] ) ) {
+            $this->error->add( 'project_root_path', 'Project root path could not be determined.' );
+
             return $fields_data;
         }
 
-        if ( file_exists( $project_root_path ) ) {
-            $this->error->add( 'slug', 'Project path already exists.' );
+        // Check if this path is already in use.
+        $registry = $this->readProjectsRegistry();
+        foreach ( $registry['projects'] as $_project_slug => $_project_data ) {
+            if ( normalizePath( $_project_data['project_root_path'] ) === $fields_data['project_root_path'] ) {
+                $this->error->add( 'slug', 'Project path is already in use.' );
+
+                return $fields_data;
+            }
         }
 
-        $registry = $this->readProjectsRegistry();
-        foreach ( $registry['projects'] as $existing_project_root_path ) {
-            if ( $this->normalizePath( $existing_project_root_path ) === $project_root_path ) {
-                $this->error->add( 'slug', 'Project path is already in use.' );
-                break;
-            }
+        // Check if project path can be created.
+        if ( ! isWritablePath( $fields_data['project_root_path'] ) ) {
+            $this->error->add( 'project_root_path', 'Project root path is not writable.' );
+
+            return $fields_data;
         }
 
         return $fields_data;
@@ -355,20 +382,13 @@ class ProjectsManager extends Generic {
         return in_array( strtolower( (string) $value ), [ '1', 'true', 'yes', 'on' ], true );
     }
 
-    private function resolveProjectRootPath( array $project_data ) : string|false {
+    private function prepareProjectRootPath( array $project_data ) : string|false {
         $projects_root = trim( (string) config( 'path_to_projects_root', '' ) );
         if ( '' === $projects_root ) {
-            $this->error->add( 'path_type', 'Projects root path is not configured.' );
-
             return false;
         }
 
         $slug = trim( (string) ( $project_data['slug'] ?? '' ) );
-        if ( '' === $slug ) {
-            $this->error->add( 'slug', 'Project slug is required.' );
-
-            return false;
-        }
 
         $base_path = $projects_root;
         if ( isTruthy( $project_data['custom_path_enabled'] ?? '0' ) ) {
@@ -376,63 +396,32 @@ class ProjectsManager extends Generic {
             if ( 'absolute' === $path_type ) {
                 $base_path = trim( (string) ( $project_data['absolute_path'] ?? '' ) );
                 if ( '' === $base_path ) {
-                    $this->error->add( 'absolute_path', 'Absolute path is required.' );
-
                     return false;
                 }
             } elseif ( 'relative' === $path_type ) {
                 $relative_path = trim( (string) ( $project_data['relative_path'] ?? '' ), " \/" );
                 if ( '' === $relative_path ) {
-                    $this->error->add( 'relative_path', 'Relative path is required.' );
-
                     return false;
                 }
                 $base_path = $projects_root . '/' . $relative_path;
             } else {
-                $this->error->add( 'path_type', 'Invalid path type.' );
 
                 return false;
             }
         }
 
-        return $this->normalizePath( $base_path . '/' . $slug );
-    }
-
-    private function normalizePath( string $path ) : string {
-        $path = str_replace( '\\', '/', trim( $path ) );
-
-        if ( '' === $path ) {
-            return $path;
-        }
-
-        if ( preg_match( '/^[A-Za-z]:\//', $path ) ) {
-            $drive = substr( $path, 0, 2 );
-            $rest  = preg_replace( '#/+#', '/', substr( $path, 2 ) ) ? : '';
-
-            return $drive . $rest;
-        }
-
-        $has_leading_slash = str_starts_with( $path, '/' );
-        $path              = preg_replace( '#/+#', '/', $path ) ? : $path;
-        $path              = rtrim( $path, '/' );
-
-        if ( '' === $path ) {
-            return '/';
-        }
-
-        if ( $has_leading_slash && ! str_starts_with( $path, '/' ) ) {
-            $path = '/' . $path;
-        }
-
-        return $path;
+        return normalizePath( $base_path . '/' . $slug );
     }
 
     private function getProjectRegistryPath() : string {
-        $projects_root = $this->normalizePath( (string) config( 'path_to_projects_root', '' ) );
+        $projects_registry_root = normalizePath( (string) config( 'path_to_projects_registry', '' ) );
 
-        return $projects_root . '/.webserver-home/projects-info.json';
+        return $projects_registry_root . '/projects-info.json';
     }
 
+    /**
+     * @throws \JsonException
+     */
     private function readProjectsRegistry() : array {
         $default_registry = [
             'lastUpdated' => gmdate( 'c' ),
@@ -449,7 +438,7 @@ class ProjectsManager extends Generic {
             return $default_registry;
         }
 
-        $decoded = json_decode( $json, true );
+        $decoded = json_decode( $json, true, 512, JSON_THROW_ON_ERROR );
         if ( ! is_array( $decoded ) ) {
             $this->error->add( 'projects_registry', 'Projects registry file is corrupted.' );
 
@@ -460,7 +449,7 @@ class ProjectsManager extends Generic {
         if ( ! empty( $decoded['projects'] ) && is_array( $decoded['projects'] ) ) {
             foreach ( $decoded['projects'] as $project_path ) {
                 if ( is_string( $project_path ) && '' !== trim( $project_path ) ) {
-                    $projects[] = $this->normalizePath( $project_path );
+                    $projects[] = normalizePath( $project_path );
                 }
             }
         }
@@ -619,29 +608,29 @@ class ProjectsManager extends Generic {
         return $decoded;
     }
 
-    private function deleteDirectory( string $path ) : void {
-        if ( ! is_dir( $path ) ) {
-            return;
-        }
-
-        $items = scandir( $path );
-        if ( false === $items ) {
-            return;
-        }
-
-        foreach ( $items as $item ) {
-            if ( $item === '.' || $item === '..' ) {
-                continue;
-            }
-
-            $item_path = $path . '/' . $item;
-            if ( is_dir( $item_path ) ) {
-                $this->deleteDirectory( $item_path );
-            } elseif ( file_exists( $item_path ) ) {
-                @unlink( $item_path );
-            }
-        }
-
-        @rmdir( $path );
-    }
+//    private function deleteDirectory( string $path ) : void {
+//        if ( ! is_dir( $path ) ) {
+//            return;
+//        }
+//
+//        $items = scandir( $path );
+//        if ( false === $items ) {
+//            return;
+//        }
+//
+//        foreach ( $items as $item ) {
+//            if ( $item === '.' || $item === '..' ) {
+//                continue;
+//            }
+//
+//            $item_path = $path . '/' . $item;
+//            if ( is_dir( $item_path ) ) {
+//                $this->deleteDirectory( $item_path );
+//            } elseif ( file_exists( $item_path ) ) {
+//                @unlink( $item_path );
+//            }
+//        }
+//
+//        @rmdir( $path );
+//    }
 }

@@ -4,14 +4,12 @@ namespace WebserverHome;
 
 /**
  * Validation rule engine contract for backend request flows.
- *
  * Fuctionality description:
  * - Call `Validator::validate( $value, $rules )` through `Generic::validateField()`.
  * - Return type is strict: `true` when valid, otherwise a single error string.
  * - Rules are resolved to `rule_{name}` methods and executed in declaration order.
  * - Rule declarations support scalar form, key/value form, and arg-array form (`rule_value`, `error_message`, etc.).
  * - `optional` short-circuits validation for empty values.
- *
  * Integration boundary:
  * - This class executes rule logic only; it does not store or emit response errors.
  * - Error aggregation/JSON response is handled by `AppError` + `Generic`.
@@ -43,6 +41,7 @@ class Validator {
      * - options: check if value is one of the options. Example: [ 'options' => [ 'option1', 'option2' ] ].
      * - allowed_chars: should be an array of allowed characters. Example: [ 'letters', 'spaces' ]. See rule_allowed_chars() for more details.
      * - bool: check if value is '1' or '0'.
+     * - when: conditional gate for current field validation. Runs the rest of field rules only when conditions are met.
      * Rules specific for $_FILES field:
      * - file_max: check if input file size is not greater than the rule value. Example: [ 'file_max' => 1000000 ].
      * - file_min: check if input file size is not less than the rule value. Example: [ 'file_min' => 1000 ].
@@ -70,14 +69,31 @@ class Validator {
      * `on_error_field_key` - if set, then the error message will be assigned to this field key. Helpful if you want to show the error message in the response container. Example: 'field_key' => [
      * ..., 'on_error_field_key' => 'general' ]
      *
-     * @param string|array $value Value to validate.
-     * @param array        $rules Validation rules.
+     * @param string|array $value   Value to validate.
+     * @param array        $rules   Validation rules.
+     * @param array        $context Optional. Extra context for rules that depend on external values.
      *
      * @return true|string True if value is valid, error message otherwise.
      */
-    public static function validate( string|array $value, array $rules = [] ) : true|string {
+    public static function validate( string|array $value, array $rules = [], array $context = [] ) : true|string {
+        // Check if field has conditions for apply validation.
+        if ( isset( $rules['when'] ) ) {
+            // Check conditions.
+            $when_result = self::rule_when( $value, $rules['when'], $context );
+
+            // If conditions are not met, then skip validation.
+            if ( ! $when_result ) {
+                return true;
+            }
+        }
+
         foreach ( $rules as $rule_key => $rule_value ) {
             $rule_args = [];
+
+            // Skip `when` rule. Because it's not a rule, but a
+            if ( $rule_key === 'when' ) {
+                continue;
+            }
 
             // There is a different way of declaring a rule: as a key, as a key=>value pair, or even with the additional args. Therefore, we need to determine the format here and assign right values for rule key, value, and args.
             // Check if rule value is the rule key.
@@ -110,6 +126,54 @@ class Validator {
                     return $result;
                 }
             }
+        }
+
+        return true;
+    }
+
+    /**
+     * Gate validation for the current field based on another form field.
+     * Supported rule options:
+     * - another_field (required): field key to inspect in form data.
+     * - another_field_exists (optional): require target field key to exist in form data.
+     * - another_field_empty (optional): require target field value to be empty()/not truthy.
+     * - another_field_not_empty (optional): require target field value to be not empty().
+     * - another_field_value_is (optional): require strict equality (===) with target value.
+     *
+     * @param mixed $value   Current field value. Not used in this rule.
+     * @param array $when    `when` rule configuration.
+     * @param array $context Validation context; expects `form_data` array.
+     *
+     * @return bool If true, then the field validation should happen. If false, then the field validation should be skipped.
+     */
+    private static function rule_when( mixed $value, array $when, array $context = [] ) : bool {
+        if ( empty( $when['another_field'] ) || ! is_string( $when['another_field'] ) ) {
+            return true;
+        }
+
+        $form_data = [];
+        if ( isset( $context['form_data'] ) && is_array( $context['form_data'] ) ) {
+            $form_data = $context['form_data'];
+        }
+
+        $another_field_exists = array_key_exists( $when['another_field'], $form_data );
+        $another_field_value  = $form_data[ $when['another_field'] ] ?? null;
+
+        // Check if another field was found in the form data.
+        if ( isset( $when['another_field_exists'] ) && ! $another_field_exists ) {
+            return false;
+        }
+
+        if ( isset( $when['another_field_empty'] ) && ! isTruthy( $another_field_value ) ) {
+            return false;
+        }
+
+        if ( isset( $when['another_field_not_empty'] ) && isTruthy( $another_field_value ) ) {
+            return false;
+        }
+
+        if ( isset( $when['another_field_value_is'] ) && $another_field_value !== $when['another_field_value_is'] ) {
+            return false;
         }
 
         return true;

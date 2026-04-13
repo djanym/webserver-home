@@ -412,6 +412,59 @@ function isTruthy( mixed $value ) : bool {
     return in_array( strtolower( (string) $value ), [ '1', 'true', 'yes', 'on' ], true );
 }
 
+function normalizePath( string $path ) : string {
+    $path = str_replace( '\\', '/', trim( $path ) );
+
+    if ( '' === $path ) {
+        return $path;
+    }
+
+    if ( preg_match( '/^[A-Za-z]:\//', $path ) ) {
+        $drive = substr( $path, 0, 2 );
+        $rest  = preg_replace( '#/+#', '/', substr( $path, 2 ) ) ? : '';
+
+        return $drive . $rest;
+    }
+
+    $has_leading_slash = str_starts_with( $path, '/' );
+    $path              = preg_replace( '#/+#', '/', $path ) ? : $path;
+    $path              = rtrim( $path, '/' );
+
+    if ( '' === $path ) {
+        return '/';
+    }
+
+    if ( $has_leading_slash && ! str_starts_with( $path, '/' ) ) {
+        $path = '/' . $path;
+    }
+
+    return $path;
+}
+
+/**
+ * Checks if the given path is writable.
+ * If the path does not exist, it will check recursively if the parent directory is writable.
+ *
+ * @param string $path
+ *
+ * @return bool
+ */
+function isWritablePath( string $path ) : bool {
+    // First check if the path exists.
+    if ( file_exists( $path ) ) {
+        // If it exists, check if it is writable.
+        return is_writable( $path );
+    }
+
+    // If does not exist, then check recursively if the parent directory is writable.
+    $parent_dir = dirname( $path );
+    if ( $parent_dir !== $path && ! isWritablePath( $parent_dir ) ) {
+        return false;
+    }
+
+    return true;
+}
+
 function get_listing_data( $dir = false ) {
     $ignore_files = [
         '.htaccess',
