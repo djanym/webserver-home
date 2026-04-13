@@ -59,17 +59,38 @@ class ProjectsManager extends Generic {
             'bool',
         ],
         'path_type'           => [
+            'when' => [
+                'another_field'                 => 'custom_path_enabled',
+                'another_field_value_is_truthy' => true,
+            ],
+            'always_required',
             'options' => [ 'relative', 'absolute' ],
         ],
         'relative_path'       => [
-//            'always_required',
-'max' => 200,
-'is_path',
+            'when' => [
+                [
+                    'another_field'                 => 'custom_path_enabled',
+                    'another_field_value_is_truthy' => true,
+                ],
+                [
+                    'another_field'          => 'path_type',
+                    'another_field_value_is' => 'relative',
+                ],
+            ],
+            'always_required',
+            'max'  => 200,
+            'is_path',
         ],
         'absolute_path'       => [
             'when' => [
-                'another_field'          => 'path_type',
-                'another_field_value_is' => 'absolute',
+                [
+                    'another_field'                 => 'custom_path_enabled',
+                    'another_field_value_is_truthy' => true,
+                ],
+                [
+                    'another_field'          => 'path_type',
+                    'another_field_value_is' => 'absolute',
+                ],
             ],
             'always_required',
             'max'  => 200,
@@ -97,16 +118,6 @@ class ProjectsManager extends Generic {
      * @throws \JsonException
      */
     public function tryCreateProject( array $input_data ) : array|false {
-        echo '<pre>';
-        $input_data['custom_path_enabled'] = 1;
-        $input_data['path_type']           = 'absolute';
-        $input_data['path_type']           = 'relative';
-        $input_data['relative_path']       = '';
-        unset( $input_data['relative_path'] );
-        unset( $input_data['absolute_path'] );
-        print_r( $input_data );
-        // Test.
-
         // Sanitize and validate provided fields data.
         $validated_data = $this->filterValidateAll( $input_data, $this->createProjectFields );
 
@@ -119,8 +130,6 @@ class ProjectsManager extends Generic {
 //        $validated_data['path_type'] = $validated_data['path_type'] ?? 'relative';
 
         $validated_data['project_root_path'] = $this->prepareProjectRootPath( $validated_data );
-
-        echo 'Project root path: ' . $validated_data['project_root_path'] . "\n\r";
 
         // Run specific checks for the data.
         $validated_data = $this->filterValidateSpecific( $validated_data );
@@ -272,31 +281,6 @@ class ProjectsManager extends Generic {
             }
         }
 
-        $path_type = $fields_data['path_type'] ?? '';
-        if ( isTruthy( $fields_data['custom_path_enabled'] ) ) {
-
-//            if ( $path_type === 'relative' && empty( $fields_data['relative_path'] ) ) {
-//                $this->error->add( 'relative_path', 'Relative path is required.' );
-//            }
-
-//            if ( $path_type === 'absolute' && empty( $fields_data['absolute_path'] ) ) {
-//                $this->error->add( 'absolute_path', 'Absolute path is required.' );
-//            }
-
-            // If custom path enabled, and set to relative or absolute, then clear unwanted errors.
-//            if ( $path_type === 'relative' ) {
-//                $this->error->remove( 'absolute_path' );
-//            } elseif ( $path_type === 'absolute' ) {
-//                $this->error->remove( 'relative_path' );
-//            }
-        }
-
-        // If custom path disabled, clear relative and absolute paths errors.
-//        if ( ! isTruthy( $fields_data['custom_path_enabled'] ) ) {
-//            $this->error->remove( 'relative_path' );
-//            $this->error->remove( 'absolute_path' );
-//        }
-
         if ( $this->error->hasErrors() ) {
             return $fields_data;
         }
@@ -321,6 +305,13 @@ class ProjectsManager extends Generic {
         // Check if project path can be created.
         if ( ! isWritablePath( $fields_data['project_root_path'] ) ) {
             $this->error->add( 'project_root_path', 'Project root path is not writable.' );
+
+            return $fields_data;
+        }
+
+        // Check if projects registry can be written.
+        if ( isWritablePath( config( 'path_to_projects_registry', '' ) ) ) {
+            $this->error->add( 'projects_registry', 'Projects registry is not writable. Check `path_to_projects_registry` in the server-config file.' );
 
             return $fields_data;
         }

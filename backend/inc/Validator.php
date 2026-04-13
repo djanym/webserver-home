@@ -41,7 +41,8 @@ class Validator {
      * - options: check if value is one of the options. Example: [ 'options' => [ 'option1', 'option2' ] ].
      * - allowed_chars: should be an array of allowed characters. Example: [ 'letters', 'spaces' ]. See rule_allowed_chars() for more details.
      * - bool: check if value is '1' or '0'.
-     * - when: conditional gate for current field validation. Runs the rest of field rules only when conditions are met.
+     * - when: conditional gate for current field validation. Supports a single condition array or a list of condition arrays.
+     *         If multiple conditions are provided, all of them must pass (AND logic) for the current field validation to run.
      * Rules specific for $_FILES field:
      * - file_max: check if input file size is not greater than the rule value. Example: [ 'file_max' => 1000000 ].
      * - file_min: check if input file size is not less than the rule value. Example: [ 'file_min' => 1000 ].
@@ -147,33 +148,49 @@ class Validator {
      * @return bool If true, then the field validation should happen. If false, then the field validation should be skipped.
      */
     private static function rule_when( mixed $value, array $when, array $context = [] ) : bool {
-        if ( empty( $when['another_field'] ) || ! is_string( $when['another_field'] ) ) {
-            return true;
-        }
-
         $form_data = [];
         if ( isset( $context['form_data'] ) && is_array( $context['form_data'] ) ) {
             $form_data = $context['form_data'];
         }
 
-        $another_field_exists = array_key_exists( $when['another_field'], $form_data );
-        $another_field_value  = $form_data[ $when['another_field'] ] ?? null;
+        // Keep backward compatibility with single condition syntax and support multi-condition arrays.
+        $conditions = array_is_list( $when ) ? $when : [ $when ];
 
-        // Check if another field was found in the form data.
-        if ( isset( $when['another_field_exists'] ) && ! $another_field_exists ) {
-            return false;
-        }
+        foreach ( $conditions as $condition ) {
+            if ( ! is_array( $condition ) || empty( $condition['another_field'] ) || ! is_string( $condition['another_field'] ) ) {
+                continue;
+            }
 
-        if ( isset( $when['another_field_empty'] ) && ! isTruthy( $another_field_value ) ) {
-            return false;
-        }
+            $another_field_exists = array_key_exists( $condition['another_field'], $form_data );
+            $another_field_value  = $another_field_exists ? $form_data[ $condition['another_field'] ] : null;
 
-        if ( isset( $when['another_field_not_empty'] ) && isTruthy( $another_field_value ) ) {
-            return false;
-        }
+            // If option is set, target field must exist in submitted data.
+            if ( isset( $condition['another_field_exists'] ) && ! $another_field_exists ) {
+                return false;
+            }
 
-        if ( isset( $when['another_field_value_is'] ) && $another_field_value !== $when['another_field_value_is'] ) {
-            return false;
+            // If option is set, target field must be empty/not truthy.
+            if ( isset( $condition['another_field_empty'] ) && ! empty( $another_field_value ) ) {
+                return false;
+            }
+
+            // If option is set, target field must be not empty/truthy.
+            if ( isset( $condition['another_field_not_empty'] ) && empty( $another_field_value ) ) {
+                return false;
+            }
+
+            // If option is set, target field must match by strict value.
+            if ( array_key_exists( 'another_field_value_is', $condition )
+                 && ( ! $another_field_exists || $another_field_value !== $condition['another_field_value_is'] )
+            ) {
+                return false;
+            }
+
+            // If another field is truthy.
+            if ( array_key_exists( 'another_field_value_is_truthy', $condition )
+                 && ! isTruthy( $another_field_value ) ) {
+                return false;
+            }
         }
 
         return true;
