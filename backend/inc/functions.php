@@ -468,6 +468,23 @@ function isWritablePath( string $path ) : bool {
     return true;
 }
 
+/**
+ * Creates a directory if it does not exist. Checks if the path is writable.
+ *
+ * @param string $path
+ * @param int    $mode
+ * @param bool   $recursive
+ *
+ * @return bool True if the directory was created, false otherwise.
+ */
+function createDirectory( string $path, int $mode = 0755, bool $recursive = true ) : bool {
+    if ( isWritablePath( $path ) ) {
+        return mkdir( $path, $mode, $recursive );
+    }
+
+    return false;
+}
+
 function get_listing_data( $dir = false ) {
     $ignore_files = [
         '.htaccess',

@@ -59,7 +59,7 @@ class ProjectsManager extends Generic {
             'bool',
         ],
         'path_type'           => [
-            'when' => [
+            'when'    => [
                 'another_field'                 => 'custom_path_enabled',
                 'another_field_value_is_truthy' => true,
             ],
@@ -126,9 +126,6 @@ class ProjectsManager extends Generic {
             return false;
         }
 
-        // @todo: add default value for the validation logic.
-//        $validated_data['path_type'] = $validated_data['path_type'] ?? 'relative';
-
         $validated_data['project_root_path'] = $this->prepareProjectRootPath( $validated_data );
 
         // Run specific checks for the data.
@@ -139,49 +136,31 @@ class ProjectsManager extends Generic {
             return false;
         }
 
-        echo 123;
-        die;
-
         return $this->createProject( $validated_data );
     }
 
+    /**
+     * Creates a new project. All checks are done before this method is called.
+     * If something goes wrong, it will return false, or if project is created partially,
+     * it will return the partially created project.
+     * No errors will be added to the error object.
+     *
+     * @param array $data
+     *
+     * @return array|false
+     */
     private function createProject( array $data ) : array|false {
-        $project_root_path = $this->resolveProjectRootPath( $data );
-        if ( false === $project_root_path ) {
-            return false;
-        }
+        $project_root_path = $data['project_root_path'];
 
-        if ( file_exists( $project_root_path ) ) {
-            $this->error->add( 'slug', 'Project path already exists.' );
+        // If the project root path is not existing, create it.
+        if ( ! is_dir( $project_root_path ) && ! createDirectory( $project_root_path ) ) {
+            $this->error->add( 'project_root_path', 'Failed to create project root directory.' );
 
             return false;
         }
 
-        if ( ! mkdir( $project_root_path, 0755, true ) ) {
-            $this->error->add( 'path_type', 'Failed to create project root folder.' );
-
-            return false;
-        }
-
-        $folders = $this->getProjectFoldersStructure( $data['slug'] );
-        foreach ( $folders as $folder_key => $folder_relative_path ) {
-            $folder_absolute_path = $this->normalizePath( $project_root_path . '/' . $folder_relative_path );
-            if ( ! is_dir( $folder_absolute_path ) && ! mkdir( $folder_absolute_path, 0755, true ) ) {
-                $this->error->add( $folder_key, 'Failed to create project folder.' );
-                $this->deleteDirectory( $project_root_path );
-
-                return false;
-            }
-        }
-
-        $document_root = $project_root_path;
-        if ( ! empty( $folders['www'] ) ) {
-            $document_root = $this->normalizePath( $project_root_path . '/' . $folders['www'] );
-        }
-
-        $created_at = gmdate( 'c' );
-        $project    = [
-            'id'                  => $data['slug'],
+        // Init data.
+        $project_registry = [
             'title'               => $data['title'],
             'slug'                => $data['slug'],
             'domain'              => $data['domain'],
@@ -190,28 +169,52 @@ class ProjectsManager extends Generic {
             'path_type'           => $data['path_type'] ?? 'relative',
             'relative_path'       => $data['relative_path'] ?? '',
             'absolute_path'       => $data['absolute_path'] ?? '',
-            'project_root_path'   => $project_root_path,
-            'document_root'       => $document_root,
-            'vhost_file'          => $this->normalizePath( config( 'path_to_apache_vhosts_dir', '' ) . '/' . $data['slug'] . '.conf' ),
-            'folders_structure'   => $folders,
-            'created_at'          => $created_at,
-            'updated_at'          => $created_at,
+            'created_at'          => gmdate( 'c' ),
+            'updated_at'          => gmdate( 'c' ),
         ];
 
-        if ( ! $this->writeProjectInfoFile( $project_root_path, $project ) ) {
-            $this->deleteDirectory( $project_root_path );
+        // Firstly we need to create a project registry file.
+        // If fails then, we need to skip the rest of the process.
+        if ( ! $this->updateProjectRegistry( $project_root_path, $project_registry ) ) {
+            $this->error->add( 'project_registry', 'Failed to create project registry file in the project directory `' . $project_root_path . '`.' );
 
             return false;
         }
+
+        // Additionally, we need to create a project record in main registry file.
+        // If fails then, we need to skip the rest of the process.
+        if ( ! $this->updateMainRegistryProjectRecord( $project_root_path, $project_registry ) ) {
+            $this->error->add( 'main_projects_registry', 'Failed to add project path to the main projects registry.' );
+
+            return false;
+        }
+
+        // Add project folder structure to project registry.
+        $project_registry['folders_structure'] = config( 'project_folders_structure', [] );
+
+        // Create project folders structure.
+        $folders = $this->getProjectFolders( $data['slug'] );
+        foreach ( $folders as $folder_relative_path ) {
+            $folder_absolute_path = normalizePath( $project_root_path . '/' . $folder_relative_path );
+            if ( ! is_dir( $folder_absolute_path ) ) {
+                createDirectory( $folder_absolute_path );
+            }
+        }
+
+        $www_root = $folders['www'] ? normalizePath( $project_root_path . '/' . $folders['www'] ) : null;
+
+        $created_at = gmdate( 'c' );
+        $project    = [
+
+            'project_root_path' => $project_root_path,
+            'document_root'     => $document_root,
+            'vhost_file'        => $this->normalizePath( config( 'path_to_apache_vhosts_dir', '' ) . '/' . $data['slug'] . '.conf' ),
+            'folders_structure' => $folders,
+            'created_at'        => $created_at,
+            'updated_at'        => $created_at,
+        ];
 
         if ( ! $this->createApacheVhostFile( $project ) ) {
-            $this->deleteDirectory( $project_root_path );
-
-            return false;
-        }
-
-        if ( ! $this->addProjectPathToRegistry( $project_root_path ) ) {
-            @unlink( $project['vhost_file'] );
             $this->deleteDirectory( $project_root_path );
 
             return false;
@@ -293,7 +296,7 @@ class ProjectsManager extends Generic {
         }
 
         // Check if this path is already in use.
-        $registry = $this->readProjectsRegistry();
+        $registry = $this->readMainRegistry();
         foreach ( $registry['projects'] as $_project_slug => $_project_data ) {
             if ( normalizePath( $_project_data['project_root_path'] ) === $fields_data['project_root_path'] ) {
                 $this->error->add( 'slug', 'Project path is already in use.' );
@@ -321,7 +324,7 @@ class ProjectsManager extends Generic {
 
     public function getAllProjects() : array {
         $projects = [];
-        $registry = $this->readProjectsRegistry();
+        $registry = $this->readMainRegistry();
 
         foreach ( $registry['projects'] as $project_root_path ) {
             $project = $this->readProjectInfoByPath( $project_root_path );
@@ -333,14 +336,8 @@ class ProjectsManager extends Generic {
         return $projects;
     }
 
-    public function getProject( string $projectId ) : ?array {
-        foreach ( $this->getAllProjects() as $project ) {
-            if ( ( $project['id'] ?? '' ) === $projectId || ( $project['slug'] ?? '' ) === $projectId ) {
-                return $project;
-            }
-        }
-
-        return null;
+    public function getProject( string $slug ) : ?array {
+        // @llm-agent-task: Implement this method.
     }
 
     private function normalizeCreateInput( array $input_data ) : array {
@@ -404,22 +401,26 @@ class ProjectsManager extends Generic {
         return normalizePath( $base_path . '/' . $slug );
     }
 
-    private function getProjectRegistryPath() : string {
+    private function getMainRegistryPath() : string {
         $projects_registry_root = normalizePath( (string) config( 'path_to_projects_registry', '' ) );
 
-        return $projects_registry_root . '/projects-info.json';
+        return $projects_registry_root . '/projects.registry.json';
+    }
+
+    private function getProjectRegistryPath( string $project_slug ) : string {
+        // @llm-agent-task: Implement this method.
     }
 
     /**
      * @throws \JsonException
      */
-    private function readProjectsRegistry() : array {
+    private function readMainRegistry() : array {
         $default_registry = [
-            'lastUpdated' => gmdate( 'c' ),
-            'projects'    => [],
+            'last_updated' => gmdate( 'c' ),
+            'projects'     => [],
         ];
 
-        $registry_path = $this->getProjectRegistryPath();
+        $registry_path = $this->getMainRegistryPath();
         if ( ! file_exists( $registry_path ) ) {
             return $default_registry;
         }
@@ -431,7 +432,7 @@ class ProjectsManager extends Generic {
 
         $decoded = json_decode( $json, true, 512, JSON_THROW_ON_ERROR );
         if ( ! is_array( $decoded ) ) {
-            $this->error->add( 'projects_registry', 'Projects registry file is corrupted.' );
+            $this->error->add( 'main_projects_registry', 'Main projects registry file is corrupted.' );
 
             return $default_registry;
         }
@@ -446,84 +447,37 @@ class ProjectsManager extends Generic {
         }
 
         return [
-            'lastUpdated' => (string) ( $decoded['lastUpdated'] ?? $default_registry['lastUpdated'] ),
-            'projects'    => array_values( array_unique( $projects ) ),
+            'last_updated' => (string) ( $decoded['last_updated'] ?? $default_registry['last_updated'] ),
+            'projects'     => array_values( array_unique( $projects ) ),
         ];
     }
 
-    private function addProjectPathToRegistry( string $project_root_path ) : bool {
-        $registry                = $this->readProjectsRegistry();
-        $registry['projects'][]  = $this->normalizePath( $project_root_path );
-        $registry['projects']    = array_values( array_unique( $registry['projects'] ) );
-        $registry['lastUpdated'] = gmdate( 'c' );
-
-        return $this->writeProjectsRegistry( $registry );
+    private function readProjectRegistry( string $project_root_path ) : bool {
+        // @llm-agent-task: Implement this method.
     }
 
-    private function writeProjectsRegistry( array $registry ) : bool {
-        $registry_path = $this->getProjectRegistryPath();
-        $registry_dir  = dirname( $registry_path );
-
-        if ( ! is_dir( $registry_dir ) && ! mkdir( $registry_dir, 0755, true ) ) {
-            $this->error->add( 'projects_registry', 'Failed to create projects registry directory.' );
-
-            return false;
-        }
-
-        $json = json_encode(
-            [
-                'lastUpdated' => $registry['lastUpdated'] ?? gmdate( 'c' ),
-                'projects'    => $registry['projects'] ?? [],
-            ],
-            JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES
-        );
-
-        if ( false === $json ) {
-            $this->error->add( 'projects_registry', 'Failed to encode projects registry data.' );
-
-            return false;
-        }
-
-        if ( false === file_put_contents( $registry_path, $json . PHP_EOL, LOCK_EX ) ) {
-            $this->error->add( 'projects_registry', 'Failed to write projects registry file.' );
-
-            return false;
-        }
-
-        return true;
+    private function updateMainRegistryProjectRecord( string $project_root_path, array $project_registry ) : bool {
+        // @llm-agent-task: Implement this method. If file is exists, then update it. If not, then create it. If project record is already exists, then update it, if not, then create it.
     }
 
-    private function getProjectFoldersStructure( string $slug ) : array {
+    private function updateProjectRegistry( string $project_root_path, array $project_registry ) : bool {
+        // @llm-agent-task: Implement this method. If file is exists, then update it. If not, then create it.
+    }
+
+    /**
+     * Prepare array with main project folders, such as folder for `www` and `docs`.
+     *
+     * @param string $slug
+     *
+     * @return string[]
+     */
+    private function getProjectFolders( string $slug ) : array {
         $configured_structure = config( 'project_folders_structure', [] );
         if ( ! is_array( $configured_structure ) || empty( $configured_structure ) ) {
             return [ 'www' => $slug ];
         }
 
-        $resolved_structure = [];
-        foreach ( $configured_structure as $key => $folder_name ) {
-            $resolved_structure[ $key ] = str_replace( '{slug}', $slug, (string) $folder_name );
-        }
-
-        return $resolved_structure;
-    }
-
-    private function writeProjectInfoFile( string $project_root_path, array $project ) : bool {
-        $project_info_path = $this->normalizePath( $project_root_path . '/project-info.json' );
-        $json              = json_encode( $project, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES );
-
-        if ( false === $json ) {
-            $this->error->add( 'project_info', 'Failed to encode project info file data.' );
-
-            return false;
-        }
-
-        if ( false === file_put_contents( $project_info_path, $json . PHP_EOL, LOCK_EX ) ) {
-            $this->error->add( 'project_info', 'Failed to write project info file.' );
-
-            return false;
-        }
-
-        return true;
+        return array_map( static function( $folder_name ) use ( $slug ) { return str_replace( '{slug}', $slug, (string) $folder_name ); }, $configured_structure );
     }
 
     private function createApacheVhostFile( array $project ) : bool {
@@ -577,51 +531,4 @@ class ProjectsManager extends Generic {
 
         return true;
     }
-
-    private function readProjectInfoByPath( string $project_root_path ) : ?array {
-        $project_root_path = $this->normalizePath( $project_root_path );
-        $project_info_path = $this->normalizePath( $project_root_path . '/project-info.json' );
-
-        if ( ! file_exists( $project_info_path ) ) {
-            return null;
-        }
-
-        $json = file_get_contents( $project_info_path );
-        if ( false === $json || '' === trim( $json ) ) {
-            return null;
-        }
-
-        $decoded = json_decode( $json, true );
-        if ( ! is_array( $decoded ) ) {
-            return null;
-        }
-
-        return $decoded;
-    }
-
-//    private function deleteDirectory( string $path ) : void {
-//        if ( ! is_dir( $path ) ) {
-//            return;
-//        }
-//
-//        $items = scandir( $path );
-//        if ( false === $items ) {
-//            return;
-//        }
-//
-//        foreach ( $items as $item ) {
-//            if ( $item === '.' || $item === '..' ) {
-//                continue;
-//            }
-//
-//            $item_path = $path . '/' . $item;
-//            if ( is_dir( $item_path ) ) {
-//                $this->deleteDirectory( $item_path );
-//            } elseif ( file_exists( $item_path ) ) {
-//                @unlink( $item_path );
-//            }
-//        }
-//
-//        @rmdir( $path );
-//    }
 }
