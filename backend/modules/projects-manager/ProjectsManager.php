@@ -190,6 +190,9 @@ class ProjectsManager extends Generic {
             return false;
         }
 
+        // Log actions to show in the frontend.
+        $log[] = '+ Project registry file created: ' . $project_registry['registered_registry_path'];
+
         // Additionally, we need to create a project record in main registry file.
         // If fails then, we need to skip the rest of the process.
         if ( ! $this->updateMainRegistryProjectRecord( $project_registry['slug'], $project_registry ) ) {
@@ -197,6 +200,8 @@ class ProjectsManager extends Generic {
 
             return false;
         }
+
+        $log[] = 'Project record added to the main registry: ' . $project_registry['slug'];
 
         // Add project folder structure to project registry.
         $project_registry['folders_structure'] = config( 'project_folders_structure', [] );
@@ -207,23 +212,30 @@ class ProjectsManager extends Generic {
             $folder_absolute_path = normalizePath( $project_root_path . '/' . $folder_relative_path );
             if ( ! is_dir( $folder_absolute_path ) ) {
                 createDirectory( $folder_absolute_path );
+                $log[] = '+ Project folder created: ' . $folder_absolute_path;
+            } else {
+                $log[] = ' - Skipped creating folder (already exists): ' . $folder_absolute_path;
             }
         }
 
-        $www_root = ! empty( $folders['www'] ) ? normalizePath( $project_root_path . '/' . $folders['www'] ) : null;
+        $log[] = 'Project folders registered: ' . implode( ', ', $folders );
 
-        $project_registry = array_merge( $project_registry, [
-//            'project_root_path' => $project_root_path,
-'document_root' => $www_root,
-//            'vhost_file'        => normalizePath( (string) config( 'path_to_apache_vhosts_dir', '' ) . '/' . $data['slug'] . '.conf' ),
+        $www_root                          = ! empty( $folders['www'] ) ? normalizePath( $project_root_path . '/' . $folders['www'] ) : null;
+        $project_registry['document_root'] = $www_root;
 
-        ] );
+        $vhost_file = $this->createApacheVhostFile( $project_registry );
+        if ( ! $vhost_file ) {
+            $log[] = ' - Failed to create Apache vhost file for the project. Please check the server logs for more details.';
+        } else {
+            $log[] = '+ Apache vhost file created: ' . $vhost_file;
+        }
 
-        $project_registry['vhost_file'] = $this->createApacheVhostFile( $project_registry );
+        $project_registry['vhost_file'] = (string) $vhost_file;
 
         // After adding more fields, we need to update the project registry.
         $this->updateProjectRegistry( $project_root_path, $project_registry );
-//        $this->updateMainRegistryProjectRecord( $project_root_path, $project_registry );
+
+        $this->additionalResponseData['log'] = $log;
 
         // Fields to return to frontend.
         return [
@@ -339,6 +351,9 @@ class ProjectsManager extends Generic {
         return $fields_data;
     }
 
+    /**
+     * @throws JsonException
+     */
     public function getAllProjects() : array {
         $projects = [];
         $registry = $this->readMainRegistry();

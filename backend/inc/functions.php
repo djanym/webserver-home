@@ -350,7 +350,7 @@ function send_json_error( $data = null, $status_code = 400 ) {
     if ( isset( $data ) ) {
         if ( is_string( $data ) ) {
             $response['error_message'] = $data;
-        } elseif ( is_app_error( $data ) ) {
+        } elseif ( isAppError( $data ) ) {
             foreach ( $data->getErrorCodes() as $code ) {
                 $response['errors'][ $code ] = $code->getErrorMessage( $code );
             }
@@ -515,59 +515,7 @@ function searchInMultiByValue( array $records, string $field, string $needle, st
     return null;
 }
 
-function get_listing_data( $dir = false ) {
-    $ignore_files = [
-        '.htaccess',
-        '.',
-        '..',
-        '.DS_Store',
-    ];
-    $files        = $dirs = [];
-    if ( ! $dir ) {
-        $current_path  = config( 'path_to_projects_root' );
-        $relative_path = null;
-    } else {
-        $current_path  = config( 'path_to_projects_root' ) . '/' . $dir;
-        $relative_path = $dir;
-    }
-
-    $data      = [];
-    $directory = dir( $current_path );
-    while ( false !== ( $entry = $directory->read() ) ) {
-        // Skip ignored files.
-        if ( in_array( $entry, $ignore_files, true ) ) {
-            continue;
-        }
-        // Full path to file/dir.
-        $entry_path = $current_path . '/' . $entry;
-
-        // Add file/dir to array.
-        if ( is_file( $entry_path ) ) {
-            $files[ $entry ] = array(
-                'relative_path' => trim( $relative_path . '/' . $entry, '/' ),
-                'full_path'     => $entry_path,
-                'name'          => $entry,
-            );
-        } elseif ( is_dir( $entry_path ) && ! in_array( $entry, $ignore_files, true ) ) {
-            $dirs[ $entry ] = array(
-                'relative_path' => trim( $relative_path . '/' . $entry, '/' ),
-                'full_path'     => $entry_path,
-                'name'          => $entry,
-            );
-        }
-    }
-    $directory->close();
-
-    // Sort files and folders in ASC order
-    asort( $files );
-    asort( $dirs );
-    $data['files']   = $files;
-    $data['folders'] = $dirs;
-
-    return $data;
-}
-
-function is_app_error( $object ) : bool {
+function isAppError( $object ) : bool {
     return $object instanceof AppError;
 }
 
