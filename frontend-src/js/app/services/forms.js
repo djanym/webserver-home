@@ -6,6 +6,7 @@
 
 import React, { useState, useCallback, useMemo, useRef } from 'react';
 import FormActionsBase from '../components/FormActionsBase';
+import FormResponse from "../components/FormResponse";
 
 // Built-in validation rule handlers that can be reused in any form.
 const BUILT_IN_VALIDATORS = {
@@ -36,6 +37,40 @@ const normalizeResponseType = (type, fallback = 'success') => {
     }
 
     return RESPONSE_TYPES.includes(type) ? type : fallback;
+};
+
+const normalizeErrorMessage = (errorMessage) => {
+    if (typeof errorMessage === 'string') {
+        return errorMessage.trim();
+    }
+
+    return String(errorMessage || '').trim();
+};
+
+const splitBackendErrors = (backendErrors, knownFieldNames) => {
+    const fieldErrors = {};
+    const responseErrors = [];
+
+    if (!backendErrors || typeof backendErrors !== 'object') {
+        return { fieldErrors, responseErrors };
+    }
+
+    Object.entries(backendErrors).forEach(([errorKey, errorMessage]) => {
+        const normalizedMessage = normalizeErrorMessage(errorMessage);
+
+        if (!normalizedMessage) {
+            return;
+        }
+
+        if (knownFieldNames.has(errorKey)) {
+            fieldErrors[errorKey] = normalizedMessage;
+            return;
+        }
+
+        responseErrors.push(normalizedMessage);
+    });
+
+    return { fieldErrors, responseErrors };
 };
 
 // Parses a string of comma-separated rules defined in the field attributes into an array of rule names.
@@ -218,13 +253,15 @@ export const formSubmitFn = ({
     const [errors, setErrors] = useState(initialErrors);
     const [responseMessage, setResponseMessage] = useState(null);
     const [responseType, setResponseType] = useState('success');
+    const [responseErrors, setResponseErrors] = useState([]);
 
     const clearResponse = useCallback(() => {
         setResponseMessage(null);
         setResponseType('success');
+        setResponseErrors([]);
     }, []);
 
-    const setResponse = useCallback((message, type = 'success') => {
+    const setResponse = useCallback((message, type = 'success', errors = []) => {
         if (typeof message !== 'string' || message.trim().length === 0) {
             clearResponse();
             return;
@@ -232,6 +269,7 @@ export const formSubmitFn = ({
 
         setResponseMessage(message);
         setResponseType(normalizeResponseType(type));
+        setResponseErrors(Array.isArray(errors) ? errors.filter(Boolean) : []);
     }, [clearResponse]);
 
     // Removes one field error so UI can react immediately when the user edits that field.
@@ -260,6 +298,10 @@ export const formSubmitFn = ({
         }
 
         setErrors((prev) => ({ ...prev, ...fieldErrors }));
+    }, []);
+
+    const setResponseErrorList = useCallback((errors = []) => {
+        setResponseErrors(Array.isArray(errors) ? errors.filter(Boolean) : []);
     }, []);
 
     const executeSubmit = useCallback(async (data) => {
@@ -292,13 +334,20 @@ export const formSubmitFn = ({
             // General error message comes from `message` key.
             const error_message = err?.message || null;
 
-            if (fieldErrors && typeof fieldErrors === 'object') {
-                setFieldErrors(fieldErrors);
+            const knownFieldNames = new Set(Object.keys(data || {}));
+            const splitErrors = splitBackendErrors(fieldErrors, knownFieldNames);
+
+            if (Object.keys(splitErrors.fieldErrors).length > 0) {
+                setFieldErrors(splitErrors.fieldErrors);
             }
 
             // Show general message only if we have it.
             if (error_message && typeof error_message === 'string' && error_message.trim().length > 0) {
-                setResponse(error_message, 'error');
+                setResponse(error_message, 'error', splitErrors.responseErrors);
+            } else if (splitErrors.responseErrors.length > 0) {
+                setResponseMessage(null);
+                setResponseType('error');
+                setResponseErrorList(splitErrors.responseErrors);
             }
 
             // onError callback can be provided when formFn() is called.
@@ -306,11 +355,16 @@ export const formSubmitFn = ({
                 onError(err);
             }
 
-            return { success: false, error: err, fieldErrors };
+            return {
+                success: false,
+                error: err,
+                fieldErrors: splitErrors.fieldErrors,
+                responseErrors: splitErrors.responseErrors
+            };
         } finally {
             setIsSubmitting(false);
         }
-    }, [onSubmit, onSuccess, onError, setFieldErrors, clearResponse, setResponse]);
+    }, [onSubmit, onSuccess, onError, setFieldErrors, clearResponse, setResponse, setResponseErrorList]);
 
     const getFieldError = useCallback((fieldName) => {
         return errors[fieldName] || null;
@@ -340,10 +394,12 @@ export const formSubmitFn = ({
         errors,
         responseMessage,
         responseType,
+        responseErrors,
         executeSubmit,
         clearFieldError,
         clearAllErrors,
         setFieldErrors,
+        setResponseErrorList,
         getFieldError,
         hasFieldError,
         renderFieldError,
@@ -580,7 +636,8 @@ export const formFn = (
         }
 
         // If no errors, then submit. Backend check also will happen.
-        return formSubmit.executeSubmit(getFormValues());
+        const submitResult = await formSubmit.executeSubmit(getFormValues());
+        return submitResult;
     }, [formSubmit, validateForm, getFormValues]);
 
     // Initialize form functionality. Attaches events handlers.
@@ -747,12 +804,10 @@ export const formFn = (
         return (
             <FormActionsBase
                 isSubmitting={formSubmit.isSubmitting}
-                responseMessage={formSubmit.responseMessage}
-                responseType={formSubmit.responseType}
                 {...props}
             />
         );
-    }, [formSubmit.isSubmitting, formSubmit.responseMessage, formSubmit.responseType]);
+    }, [formSubmit.isSubmitting]);
 
     return {
         ...formFields,
@@ -761,6 +816,7 @@ export const formFn = (
         initFormFn,
         FormField,
         FormActions,
+        FormResponse,
         validateForm
     };
 };

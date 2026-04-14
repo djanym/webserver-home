@@ -409,7 +409,10 @@ function check_invalid_utf8( $text, $strip = false ) {
  * @return bool
  */
 function isTruthy( mixed $value ) : bool {
-    return ! empty( $value ) && in_array( strtolower( (string) $value ), [ '1', 'true', 'yes', 'on' ], true );
+    $value = is_string( $value ) ? strtolower( trim( $value ) ) : $value;
+
+    return ! empty( $value )
+           && in_array( $value, [ true, 1, '1', 'true', 'yes', 'on' ], true );
 }
 
 function normalizePath( string $path ) : string {

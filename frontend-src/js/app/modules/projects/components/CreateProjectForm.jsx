@@ -8,6 +8,7 @@ import { useAppConfig } from '../../../services/config-context';
 import { formFn } from '../../../services/forms';
 import { slugify } from '../../../services/helpers';
 import ManagedForm from '../../../components/ManagedForm';
+import FormResponse from '../../../components/FormResponse';
 
 const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
     // App configuration context from the app backend.
@@ -70,6 +71,9 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         setMultipleValues,
         FormField,
         FormActions,
+        responseMessage,
+        responseType,
+        responseErrors,
         clearFieldError,
         reset
     } = form;
@@ -312,6 +316,12 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
                     onCancel={onCancel}
                     submitLabel="Create Project"
                     submittingLabel="Creating..."
+                />
+
+                <FormResponse
+                        responseMessage={responseMessage}
+                        responseType={responseType}
+                        responseErrors={responseErrors}
                 />
             </ManagedForm>
         </div>

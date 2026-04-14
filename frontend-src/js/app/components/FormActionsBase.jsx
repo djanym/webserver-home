@@ -6,8 +6,6 @@ import React from 'react';
 
 const FormActionsBase = ({
     isSubmitting,
-    responseMessage,
-    responseType = 'success',
     className = 'form-actions',
     actionButtonsRowClassName = 'action-buttons-row',
     submitLabel = 'Submit',
@@ -16,15 +14,11 @@ const FormActionsBase = ({
     cancelLabel = 'Cancel',
     onCancel,
     cancelClassName = 'btn btn-secondary',
-    responseClassName = 'response-container',
     spinnerClassName = 'button-spinner',
     children,
     submitButtonProps = {},
     cancelButtonProps = {}
 }) => {
-    const resolvedResponseType = ['error', 'success', 'info'].includes(responseType) ? responseType : 'success';
-    const hasResponseMessage = typeof responseMessage === 'string' && responseMessage.trim().length > 0;
-
     return (
         <div className={className}>
             <div className={actionButtonsRowClassName}>
@@ -56,12 +50,6 @@ const FormActionsBase = ({
                     ) : submitLabel}
                 </button>
             </div>
-
-            {hasResponseMessage && (
-                <div className={`${responseClassName} ${resolvedResponseType}`}>
-                    {responseMessage}
-                </div>
-            )}
         </div>
     );
 };

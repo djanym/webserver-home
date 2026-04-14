@@ -6,13 +6,11 @@ use RuntimeException;
 
 /**
  * Backend request-flow base contract.
- *
  * Responsibilities:
  * - Owns per-request error container (`AppError`) and additional response payload.
  * - Provides JSON emitters: `sendJsonResponse()` for success path, `sendErrorResponse()` for failure path.
  * - Provides validation wrappers: `filterValidateAll()` (field filtering + recursive subset validation)
  *   and `validateField()` (delegates rule execution to `Validator::validate()`).
- *
  * Agent usage:
  * - Extend/reuse this class for handlers/services that validate input and return API responses.
  * - Do not duplicate response/error plumbing in module classes.
@@ -148,7 +146,8 @@ class Generic {
                     $error_field_key,
                     [
                         'form_data' => $form_data,
-                        'field_key' => $field_key, // Why not $error_field_key? Because $error_field_key can be overridden by the validation rules, and we want to keep the original field key for the context of the validation rules. Should be confirmed!
+                        'field_key' => $field_key,
+                        // Why not $error_field_key? Because $error_field_key can be overridden by the validation rules, and we want to keep the original field key for the context of the validation rules. Should be confirmed!
                     ]
                 );
 

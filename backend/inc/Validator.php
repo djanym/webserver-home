@@ -70,13 +70,13 @@ class Validator {
      * `on_error_field_key` - if set, then the error message will be assigned to this field key. Helpful if you want to show the error message in the response container. Example: 'field_key' => [
      * ..., 'on_error_field_key' => 'general' ]
      *
-     * @param string|array $value   Value to validate.
+     * @param mixed $value   Value to validate.
      * @param array        $rules   Validation rules.
      * @param array        $context Optional. Extra context for rules that depend on external values.
      *
      * @return true|string True if value is valid, error message otherwise.
      */
-    public static function validate( string|array $value, array $rules = [], array $context = [] ) : true|string {
+    public static function validate( mixed $value, array $rules = [], array $context = [] ) : true|string {
         // Check if field has conditions for apply validation.
         if ( isset( $rules['when'] ) ) {
             // Check conditions.
@@ -644,12 +644,14 @@ class Validator {
     /**
      * Check if value is a 1 (true) or 0 (false).
      *
-     * @param string $value Value to check.
+     * @param mixed $value Value to check.
      *
      * @return true|string True if valid, error message otherwise.
      */
-    private static function rule_bool( string $value ) : true|string {
-        if ( $value !== '1' && $value !== '0' ) {
+    private static function rule_bool( mixed $value ) : true|string {
+        $value = is_string($value) ? strtolower($value) : $value;
+        $possible_values = [ false, true, 1, 0, '1', '0', 'true', 'false', 'yes', 'no', 'on', 'off' ];
+        if ( ! in_array( $value, $possible_values, true ) ) {
             return 'Invalid value.';
         }
 
