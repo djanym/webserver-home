@@ -415,6 +415,13 @@ function isTruthy( mixed $value ) : bool {
            && in_array( $value, [ true, 1, '1', 'true', 'yes', 'on' ], true );
 }
 
+/**
+ * Normalizes a file path by replacing backslashes with forward slashes, removing redundant slashes, and ensuring consistent formatting.
+ *
+ * @param string $path
+ *
+ * @return string
+ */
 function normalizePath( string $path ) : string {
     $path = str_replace( '\\', '/', trim( $path ) );
 
@@ -483,6 +490,29 @@ function createDirectory( string $path, int $mode = 0755, bool $recursive = true
     }
 
     return false;
+}
+
+function searchInMultiByValue( array $records, string $field, string $needle, string $exclude_key = '' ) : ?string {
+    if ( '' === $needle ) {
+        return null;
+    }
+
+    foreach ( $records as $record_key => $record ) {
+        if ( '' !== $exclude_key && (string) $record_key === $exclude_key ) {
+            continue;
+        }
+
+        if ( ! is_array( $record ) ) {
+            continue;
+        }
+
+        $candidate = $record[ $field ] ?? null;
+        if ( $candidate === $needle ) {
+            return (string) $record_key;
+        }
+    }
+
+    return null;
 }
 
 function get_listing_data( $dir = false ) {
