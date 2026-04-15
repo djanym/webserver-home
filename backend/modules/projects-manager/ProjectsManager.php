@@ -174,7 +174,7 @@ class ProjectsManager extends Generic {
             'path_type'                => $data['path_type'] ?? 'relative',
             'relative_path'            => $data['relative_path'] ?? '',
             'absolute_path'            => $data['absolute_path'] ?? '',
-            'registered_project_path'  => $project_root_path,
+            'registered_root_path'     => $project_root_path,
             'registered_registry_path' => $project_root_path . '/project.registry.json',
             'created_at'               => $created_at,
             'updated_at'               => $created_at,
@@ -195,7 +195,7 @@ class ProjectsManager extends Generic {
 
         // Additionally, we need to create a project record in main registry file.
         // If fails then, we need to skip the rest of the process.
-        if ( ! $this->updateMainRegistryProjectRecord( $project_registry['slug'], $project_registry ) ) {
+        if ( ! $this->updateMainRegistryProjectRecord( $project_registry ) ) {
             $this->error->add( 'main_projects_registry', 'Failed to add project path to the main projects registry.' );
 
             return false;
@@ -342,7 +342,7 @@ class ProjectsManager extends Generic {
         }
 
         // Check if projects registry can be written.
-        if ( isWritablePath( config( 'path_to_projects_registry', '' ) ) ) {
+        if ( ! isWritablePath( config( 'path_to_projects_registry', '' ) ) ) {
             $this->error->add( 'projects_registry', 'Projects registry is not writable. Check `path_to_projects_registry` in the server-config file.' );
 
             return $fields_data;
@@ -352,14 +352,17 @@ class ProjectsManager extends Generic {
     }
 
     /**
+     * Retrieve all projects data. Reads the main projects registry file, then each project registry file, and finally
+     * returns an array of project data.
+     *
      * @throws JsonException
      */
     public function getAllProjects() : array {
         $projects = [];
         $registry = $this->readMainRegistry();
 
-        foreach ( $registry['projects'] as $project_root_path ) {
-            $project = $this->readProjectInfoByPath( $project_root_path );
+        foreach ( $registry['projects'] as $project_slug => $project_data ) {
+            $project = $this->readProjectRegistry( $project_data['registered_registry_path'] ?? '', false );
             if ( ! empty( $project ) ) {
                 $projects[] = $project;
             }
@@ -616,11 +619,17 @@ class ProjectsManager extends Generic {
      * @throws JsonException
      */
     private function updateMainRegistryProjectRecord( array $project_registry ) : bool {
-        $project_regisered_root_path = $project_registry['registered_root_path'] ?? null;
-        $project_registry_path       = $project_registry['registered_registry_path'] ?? null;
+        $project_registered_root_path = $project_registry['registered_root_path'] ?? null;
+        $project_registry_path        = $project_registry['registered_registry_path'] ?? null;
 
-        if ( empty( $project_regisered_root_path ) || empty( $project_registry_path ) ) {
-            $this->error->add( 'main_projects_registry', 'Project root path is empty.' );
+        if ( empty( $project_registered_root_path ) ) {
+            $this->error->add( 'project_root_path', 'Project root path is empty.' );
+
+            return false;
+        }
+
+        if ( empty( $project_registry_path ) ) {
+            $this->error->add( 'project_registry_path', 'Project registry path is empty.' );
 
             return false;
         }
@@ -639,14 +648,14 @@ class ProjectsManager extends Generic {
         // Find project record in the registry by project slug.
         $project_slug = $project_registry['slug'] ?? '';
         if ( isset( $registry['projects'][ $project_slug ] ) ) {
-            $registry['projects'][ $project_slug ]['registered_root_path']     = $project_regisered_root_path;
+            $registry['projects'][ $project_slug ]['registered_root_path']     = $project_registered_root_path;
             $registry['projects'][ $project_slug ]['registered_registry_path'] = $project_registry_path;
         } else {
             // Find project record in the registry by project registered root path.
             $matched_slug = searchInMultiByValue(
                 $registry['projects'],
                 'registered_root_path',
-                $project_regisered_root_path
+                $project_registered_root_path
             );
             if ( null !== $matched_slug ) {
                 $this->error->add( 'main_projects_registry', 'Project root path is already used by `' . $matched_slug . '`.' );
@@ -665,6 +674,9 @@ class ProjectsManager extends Generic {
 
                 return false;
             }
+
+            // Add new project record to the registry.
+            $registry['projects'][ $project_slug ] = $project_registry;
         }
 
         $this->updateMainRegistry( $registry );
@@ -697,6 +709,9 @@ class ProjectsManager extends Generic {
         return $project_registry;
     }
 
+    /**
+     * @throws JsonException
+     */
     private function readProjectInfoByPath( string $project_root_path ) : ?array {
         $project_root_path = normalizePath( trim( $project_root_path ) );
         if ( '' === $project_root_path ) {
@@ -723,34 +738,6 @@ class ProjectsManager extends Generic {
         }
 
         return $project_registry;
-    }
-
-    private function deleteDirectory( string $path ) : bool {
-        $path = normalizePath( trim( $path ) );
-        if ( '' === $path || '/' === $path ) {
-            return false;
-        }
-
-        if ( ! file_exists( $path ) ) {
-            return true;
-        }
-
-        if ( is_file( $path ) || is_link( $path ) ) {
-            return unlink( $path );
-        }
-
-        $items = scandir( $path );
-        if ( false === $items ) {
-            return false;
-        }
-
-        foreach ( array_diff( $items, [ '.', '..' ] ) as $item ) {
-            if ( ! $this->deleteDirectory( $path . '/' . $item ) ) {
-                return false;
-            }
-        }
-
-        return rmdir( $path );
     }
 
     /**
@@ -792,24 +779,21 @@ class ProjectsManager extends Generic {
         }
 
         if ( ! is_dir( $vhosts_dir ) ) {
-            if ( ! mkdir( $vhosts_dir, 0755, true ) && ! is_dir( $vhosts_dir ) ) {
-                $this->error->add( 'vhost', 'Failed to create Apache virtual hosts directory.' );
+            $this->error->add( 'vhost', 'Apache virtual hosts directory does not exist. Check the server-config file.' );
 
-                return false;
-            }
+            return false;
         }
 
         $replacements = [
             '{{SERVER_NAME}}'   => $project['domain'],
             '{{DOCUMENT_ROOT}}' => $project['document_root'],
             '{{PROJECT_SLUG}}'  => $project['slug'],
-            '{server_name}'     => $project['domain'],
-            '{document_root}'   => $project['document_root'],
-            '{project_slug}'    => $project['slug'],
-            '%server_name%'     => $project['domain'],
-            '%document_root%'   => $project['document_root'],
-            '%project_slug%'    => $project['slug'],
         ];
+
+        // Add replacements.
+        foreach ( config( 'vhost_tpl_replacements', [] ) as $key => $value ) {
+            $replacements[ '{{' . $key . '}}' ] = $value;
+        }
 
         $vhost_content = strtr( $template_content, $replacements );
         $vhost_path    = normalizePath( $vhosts_dir . '/' . $project['slug'] . '.conf' );

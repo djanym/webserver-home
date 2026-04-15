@@ -37,7 +37,7 @@ function CreateProjectCb() : void {
     $project_data = $manager->tryCreateProject( $input );
 
     if ( false === $project_data || $manager->hasErrors() ) {
-        $manager->sendErrorResponse( 'Project was not created. Review the form errors.', 422 );
+        $manager->sendErrorResponse( 'Project was not created. Review the errors.', 422 );
 
         return;
     }

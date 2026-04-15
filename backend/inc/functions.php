@@ -486,7 +486,7 @@ function isWritablePath( string $path ) : bool {
  */
 function createDirectory( string $path, int $mode = 0755, bool $recursive = true ) : bool {
     if ( isWritablePath( $path ) ) {
-        return mkdir( $path, $mode, $recursive );
+        return mkdir( $path.'/', $mode, $recursive );
     }
 
     return false;
