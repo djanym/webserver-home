@@ -1,24 +1,24 @@
-# Webserver Home Manager — LLM Agent Guidelines
+# Webserver Home Manager - LLM Agent Guidelines
 
 Backend implementation directives for agents are in `guidelines-backend.md`.
 
 # General Description
 
-Webserver Home Manager is a **web-based dashboard** for managing **local web development projects** and **Apache virtual hosts**.
+Webserver Home Manager is a web dashboard for managing local web development projects and Apache virtual hosts.
 
 - App runs in browser
-- App located in **separate folder**
-- Projects located in **server root**
-- App manages projects **externally**
-- Each project = independent website
+- App is located in a separate folder from managed projects
+- Projects are created/imported under a configurable server root
+- App manages project metadata and Apache vhost files through a file/config-driven backend
+- Each project is an independent website
 
 App automates:
 
 - Project creation
-- Folder structure creation
-- Virtual host configuration
-- Project import
-- Project management
+- Project folder structure creation
+- Apache virtual host file generation
+- Project import and listing
+- Project management actions
 
 ---
 
@@ -26,11 +26,11 @@ App automates:
 
 | Term | Description |
 |------|-------------|
-| App | Webserver Home Manager dashboard |
-| Project | Individual website project |
-| Server Root | Parent directory containing projects |
-| Project Config | `project-config.php` inside project |
-| Server Config | `server-config.php` in server root |
+| App | Webserver Home Manager dashboard (`webserver-home`) |
+| Project | Individual managed website under the configured projects root |
+| Project Registry | Per-project metadata file (`project.registry.json`) in project root |
+| Main Projects Registry | Global projects registry file (path from `path_to_projects_registry`) |
+| Server Config | Backend config in `/backend/config` (`server-config.php`, `app-config.php`) |
 
 ---
 
@@ -39,85 +39,46 @@ App automates:
 ## Config-Driven (No Database)
 
 - No database
-- File-based configuration
-
-### server-config.php
-
-Stores:
-
-- Project list
-- Minimal metadata
-
-### project-config.php
-
-Stores:
-
-- Project metadata
-- Domain
-- Paths
-- Settings
+- File-based configuration and registries
 
 ## Rules
 
-- Each project independent
-- Projects portable
-- Config separation required
+- Projects must remain independent and portable
+- Runtime behavior must come from config files/env, not hardcoded machine paths
+- Module boundaries should stay strict (backend modules + frontend modules)
 
 ---
 
 # Structure
 
-## Server Root
+## Server Root (Example)
 
+```text
 /server-root/
-├── project-1/
-├── project-2/
-└── server-config.php
+|- project-1/
+|  `- project.registry.json
+|- project-2/
+|  `- project.registry.json
+`- .webserver-home/   (main projects registry folder)
+```
 
-## App Location
+## App Location (Example)
 
+```text
 /server-root/
-├── webserver-home/
+|- webserver-home/
+|  |- backend/
+|  |- frontend-src/
+|  `- frontend-public/
+|- project-1/
+`- project-2/
+```
 
 Rules:
 
-- App NOT inside project
-- Projects NOT inside app
-- App manages parent folder
-
----
-
-# Project Folder Structure
-
-/server-root/
-├── my-project/
-│   ├── docs/
-│   ├── [website-domain-name]/
-│   └── project-config.php
-
-Directories:
-
-- `[website-domain-name]/` — where root of website.
-- `docs/` — project additional files such as media, docs, etc.
-
-Explanation: project name can be not the same name as domain. For example, `my-project` can be `petshop.com`. And virtual host can be `petshop.server.local`. All of this should be configurable.
-
----
-
-# Apache Logic
-
-App must:
-
-- Create virtual hosts
-- Remove virtual hosts
-- Update virtual hosts
-- Restart Apache
-- Map domains to projects
-
-Each project:
-
-- Separate virtual domain
-- Separate document root
+- App is not inside a managed project
+- Managed projects are not inside the app folder
+- App manages projects through configured paths
 
 ---
 
@@ -127,9 +88,9 @@ Each project:
 
 - PHP 8.3
 - HTML
-- CSS
-- JavaScript
-- React (optional, lightweight)
+- SCSS/CSS
+- JavaScript (ES modules)
+- React (lightweight functional components)
 
 ## Environment
 
@@ -137,28 +98,27 @@ Each project:
 - macOS
 - No database required
 
-## Architecture
+## Runtime Architecture
 
-- Backend = PHP API
+- Backend = PHP JSON API
 - Frontend = SPA
-- Communication = AJAX / Fetch
-- No heavy frameworks
+- Communication = Fetch/AJAX
+- Build = Gulp + Webpack + Babel + Sass/PostCSS
 
 ---
 
 # App Structure
 
-/backend - for backend api.
-/frontend-src - for js, css, images, and other sources which should be generated and exported to `frontend-public`.
-/frontend-public - public folder. Assets will be generated from frontend-src.
+- `/backend` - backend API, config, shared classes, modules
+- `/frontend-src` - source assets (JS/JSX, SCSS, images, fonts)
+- `/frontend-public` - built/public assets and app public config
 
 ## Module-First Structure
 
 - Backend modules: `/backend/modules/{module-name}`
 - Frontend modules: `/frontend-src/js/app/modules/{module-name}`
-- Each module owns its own routing and feature logic
-- Shared backend classes/utilities stay in `/backend/inc`, `/backend/config`, `/backend/routes.php`
-- Shared frontend request wrapper stays in `/frontend-src/js/app/services/api.js`
+- Shared backend code: `/backend/inc`, `/backend/config`, `/backend/routes.php`
+- Shared frontend request wrapper: `/frontend-src/js/app/services/api.js`
 
 ---
 
@@ -169,40 +129,31 @@ Primary backend agent contract: `guidelines-backend.md`.
 ## Rules
 
 - Backend root: `/backend`
-- Backend independent
-- API only
+- API-only backend
 - JSON responses only
+- No business logic in route declaration files
 
 ## Routing
 
-- Uses AltoRouter library
-- Route bootstrap in `/backend/routes.php`
-- Module route definitions in `/backend/modules/{module-name}/routes.php`
+- Router: AltoRouter
+- Route bootstrap: `/backend/routes.php`
+- Module route definitions: `/backend/modules/{module-name}/routes.php`
+- Module routes are auto-discovered from `/backend/modules/*/routes.php`
 
-Rules:
+## Execution Pipeline
 
-- No logic in routes
-- `backend/routes.php` should only bootstrap and register module routes
-- Module handlers should contain endpoint behavior (for example in `handlers.php`)
-
-## Architecture
-
-- No strict MVC
-- Feature-based classes
-- Module-specific functionality should live in module folders
-- Shared/common classes may be placed in `inc` folder
-- Base flow class: `/backend/inc/Generic.php` (read class header first for response, validation, and error pipeline).
-- Validation engine: `/backend/inc/Validator.php` (read class header first; for rule-level behavior inspect class methods).
-- Error container: `/backend/inc/AppError.php` (read class header first; use for error aggregation and response payload preparation).
+- Route -> module handler (`handlers.php`) -> module class/service
+- Reuse shared request-flow classes in `/backend/inc`
+- For validation/errors/JSON response flow, follow class header contracts first:
+  - `/backend/inc/Generic.php`
+  - `/backend/inc/Validator.php`
+  - `/backend/inc/AppError.php`
 
 ## Config
 
-/backend/config
-
-Rules:
-
-- Use environment variables
-- No hardcoded paths
+- Config files: `/backend/config/app-config.php`, `/backend/config/server-config.php`
+- Use environment/config driven values
+- Avoid hardcoded paths in feature code
 
 ---
 
@@ -211,42 +162,29 @@ Rules:
 ## Rules
 
 - SPA only
-- No reloads
-- API communication only
-
-Allowed:
-
-- Vanilla JS
-- jQuery
-- React (lightweight)
-
-React Rules:
-
-- Functional components
-- Minimal structure
-- No heavy frameworks
-- No complex state managers
+- No full-page reload workflow
+- API communication via shared wrapper
 
 ## Frontend Module Rules
 
-- Keep the shared request/response wrapper in `/frontend-src/js/app/services/api.js`
-- Put module API helpers in `/frontend-src/js/app/modules/{module-name}/{module-name}-api.js`.
-- Api functions should be named `api{ActionName}`
-- Module API helpers should expose `(apiRoute, data, method = 'POST')`-style wrappers
-- Put module UI entry in `/frontend-src/js/app/modules/{module-name}/{module-name}.js`
-- Keep module components inside the module folder
+- Shared API wrapper: `/frontend-src/js/app/services/api.js`
+- Module API helpers: `/frontend-src/js/app/modules/{module-name}/{module-name}-api.js`
+- API helper naming: `api{ActionName}`
+- Module UI entry: `/frontend-src/js/app/modules/{module-name}/{module-name}.js`
+- Module components stay inside module folder
 
 ---
 
-# CSS
+# CSS / SCSS
 
-Source files in `/frontend-src/src/scss/`.
+- Source SCSS: `/frontend-src/scss/`
+- Output CSS: `/frontend-public/assets/css/`
+
 Rules:
 
-- Use SCSS
-- No inline styles
-- Shallow selectors
-- Reusable styles
+- Use SCSS source files
+- No inline styles for app UI
+- Keep selectors shallow and reusable
 
 ---
 
@@ -257,45 +195,48 @@ Rules:
 - Gulp
 - Webpack
 - Babel
-- SCSS
+- Sass/PostCSS
 
-## Gulp file
+## Build Entry
 
-frontend-src/gulpfile.mjs - for generating frontend assets.
-
----
+- Build config/task runner: `/frontend-src/gulpfile.mjs`
 
 ### JavaScript / React
 
-- Bundle JS / JSX
-- Transpile via Babel
-- Bundle via Webpack
-
-Source files in `frontend-src/js/app/`.
-Output files in `frontend-public/assets/js/build/`.
-Use `run:gulp:js` npm script to build JS.
-
----
+- Source entry: `/frontend-src/js/app/appEntry.js`
+- Source modules: `/frontend-src/js/app/`
+- Output bundle path: `/frontend-public/assets/js/build/`
+- Script: `run:gulp:js`
 
 ### CSS
 
-Source files in `frontend-src/src/scss/`.
-Output files in `frontend-public/assets/css/`.
-Use `run:gulp:css` npm script to build CSS.
+- Source: `/frontend-src/scss/`
+- Output: `/frontend-public/assets/css/`
+- Script: `run:gulp:css`
 
-### Images
+### Images and Fonts
 
-Store images in `frontend-src/src/images/`.
-All images will be copied to `frontend-public/assets/images/` during build.
+- Source images: `/frontend-src/images/` -> `/frontend-public/assets/images/`
+- Source fonts: `/frontend-src/fonts/` -> `/frontend-public/assets/fonts/`
+
+---
+
+# Code Style
+
+All technical code-style rules are maintained in `guidelines-cs.md`.
+
+- Always load and follow `guidelines-cs.md` before generating or editing code
+- Backend-specific implementation/style constraints live in `guidelines-backend.md`
+- Keep this file focused on architecture/runtime contracts, not low-level formatting rules
 
 ---
 
 # Design Rules
 
 - No database
-- Projects portable. Means can be copied on another machine with this app and it should work.
-- Config-driven
-- Simple architecture
+- Projects must remain portable between machines
+- Config-driven behavior
+- Keep architecture simple and maintainable
 
 ---
 
@@ -303,16 +244,12 @@ All images will be copied to `frontend-public/assets/images/` during build.
 
 Always:
 
-- Keep code minimal
-- Follow folder structure
-- Keep backend independent
-- Use config-driven logic
-- Avoid complexity
-- Avoid heavy frameworks
-- Use JSON API
+- Keep code minimal and practical
+- Follow folder/module structure
+- Keep backend API-only and JSON-only
+- Prefer config-driven logic
+- Avoid heavy frameworks and unnecessary complexity
 - Keep projects portable
-- For backend tasks, load `guidelines-backend.md` before editing handlers/modules.
-- Use `Generic` as request-flow base in backend classes; avoid duplicating response/validation/error plumbing.
-- Add field errors via `AppError` (`$this->error->add(...)`) and return JSON via `Generic::sendErrorResponse()`.
-- Run input checks through `Generic::filterValidateAll()` / `Generic::validateField()`; `Validator` is the single rule execution engine.
-- For internals of any backend shared class, trust and follow that class header contract first, then method-level implementation.
+- Load `guidelines-cs.md` for code style and naming/commenting standards
+- For backend tasks, load `guidelines-backend.md` before editing backend handlers/modules
+- Reuse `Generic`, `Validator`, and `AppError` contracts instead of duplicating request/validation/error plumbing
