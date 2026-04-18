@@ -4,10 +4,13 @@
  */
 
 import React from 'react';
+import NotificationsHost from './NotificationsHost';
 
 const AppShell = ({ title, headerAction, children }) => {
     return (
         <div className="app">
+            <NotificationsHost />
+
             <header className="app-header">
                 <div className="container">
                     <h1 className="app-title">{title}</h1>
