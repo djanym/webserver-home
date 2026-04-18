@@ -7,7 +7,6 @@
 namespace WebserverHome;
 
 use JsonException;
-use WebserverHome\Generic;
 
 /**
  * Class ProjectManager
@@ -15,6 +14,8 @@ use WebserverHome\Generic;
  * @package WebserverHome
  */
 class ProjectsManager extends Generic {
+    private const string MAIN_PROJECTS_REGISTRY_FILENAME = 'projects-main.registry.json';
+
     /**
      * Singleton instance.
      *
@@ -233,7 +234,7 @@ class ProjectsManager extends Generic {
         $project_registry['vhost_file'] = (string) $vhost_file;
 
         // After adding more fields, we need to update the project registry.
-        $this->updateProjectRegistry( $project_root_path, $project_registry );
+        $this->updateProjectRegistry( $project_registry['registered_registry_path'], $project_registry );
 
         $this->additionalResponseData['log'] = $log;
 
@@ -342,8 +343,8 @@ class ProjectsManager extends Generic {
         }
 
         // Check if projects registry can be written.
-        if ( ! isWritablePath( config( 'path_to_projects_registry', '' ) ) ) {
-            $this->error->add( 'projects_registry', 'Projects registry is not writable. Check `path_to_projects_registry` in the server-config file.' );
+        if ( ! isWritablePath( $this->getMainRegistryFilePath() ) ) {
+            $this->error->add( 'projects_registry', 'Projects registry is not writable. Check `path_to_app_working_dir` in the server-config file.' );
 
             return $fields_data;
         }
@@ -471,6 +472,21 @@ class ProjectsManager extends Generic {
         return normalizePath( $projects_root . '/' . $slug . '/project.registry.json' );
     }
 
+    private function getAppWorkingDirPath() : string {
+        $registry_root_path = config( 'path_to_app_working_dir', '' );
+
+        return normalizePath( trim( (string) $registry_root_path ) );
+    }
+
+    private function getMainRegistryFilePath() : string {
+        $registry_root_path = $this->getAppWorkingDirPath();
+        if ( '' === $registry_root_path ) {
+            return '';
+        }
+
+        return normalizePath( $registry_root_path . '/' . self::MAIN_PROJECTS_REGISTRY_FILENAME );
+    }
+
     /**
      * Reads the main projects registry file. If the file does not exist, it will try to create it.
      *
@@ -482,11 +498,10 @@ class ProjectsManager extends Generic {
             'projects'     => [],
         ];
 
-        $registry_path = config( 'path_to_projects_registry', '' );
-        $registry_path = normalizePath( trim( (string) $registry_path ) );
+        $registry_path = $this->getMainRegistryFilePath();
 
         if ( '' === $registry_path ) {
-            $this->error->add( 'main_projects_registry', 'Projects registry path is not configured.' );
+            $this->error->add( 'main_projects_registry', 'Projects registry root path is not configured.' );
 
             return null;
         }
@@ -498,7 +513,7 @@ class ProjectsManager extends Generic {
             }
 
             $registry_dir = dirname( $registry_path );
-            if ( '' !== $registry_dir && ! is_dir( $registry_dir ) && ! createDirectory( $registry_dir ) ) {
+            if ( ! is_dir( $registry_dir ) && ! createDirectory( $registry_dir ) ) {
                 $this->error->add( 'main_projects_registry', 'Failed to create the projects registry directory.' );
 
                 return null;
@@ -597,15 +612,18 @@ class ProjectsManager extends Generic {
         return is_array( $decoded ) ? $decoded : null;
     }
 
+    /**
+     * @throws JsonException
+     */
     private function updateMainRegistry( array $registry ) : bool {
-        $registry_path = config( 'path_to_projects_registry', '' );
-        $registry_path = normalizePath( trim( (string) $registry_path ) );
+        $registry_path = $this->getMainRegistryFilePath();
         if ( '' === $registry_path ) {
-            $this->error->add( 'main_projects_registry', 'Projects registry path is not configured.' );
+            $this->error->add( 'main_projects_registry', 'Projects registry does not exists.' );
 
             return false;
         }
-        $json = json_encode( $registry, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+
+        $json = json_encode( $registry, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
         if ( false === file_put_contents( $registry_path, $json, LOCK_EX ) ) {
             $this->error->add( 'main_projects_registry', 'Failed to write the main projects registry file.' );
 
@@ -694,7 +712,9 @@ class ProjectsManager extends Generic {
     private function updateProjectRegistry( string $registry_path, array $project_registry ) : array|false {
         $existing_registry = $this->readProjectRegistry( $registry_path, true );
 
-        $registry_path                                = $existing_registry['registered_registry_path'] ?? $registry_path;
+        // If $project_registry has `registered_registr_path`, then use it as higher priority.
+        $registry_path = $existing_registry['registered_registry_path'] ?? $registry_path;
+
         $project_registry['registered_registry_path'] = $registry_path;
 
         if ( false === file_put_contents(

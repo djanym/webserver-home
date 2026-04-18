@@ -36,13 +36,19 @@ function CreateProjectCb() : void {
     $manager      = ProjectsManager::get_instance();
     $project_data = $manager->tryCreateProject( $input );
 
-    if ( false === $project_data || $manager->hasErrors() ) {
+    if ( false === $project_data ) {
         $manager->sendErrorResponse( 'Project was not created. Review the errors.', 422 );
 
         return;
     }
 
-    $manager->sendJsonResponse( [ 'project' => $project_data ], 201 );
+    $response_data = [ 'project' => $project_data ];
+
+    if ( $manager->hasErrors() ) {
+        $response_data['message'] = 'Project was created, but some errors occurred. Review the errors.';
+    }
+
+    $manager->sendJsonResponse( $response_data, 201, true );
 }
 
 function pmUpdateProject( string $id ) : void {
@@ -60,15 +66,4 @@ function pmUpdateProject( string $id ) : void {
 
     $project = $manager->updateProject( $id, $input );
     send_json_success( [ 'project' => $project ] );
-}
-
-function pmDeleteProject( string $id ) : void {
-    $manager = ProjectsManager::get_instance();
-
-    if ( ! $manager->projectExists( $id ) ) {
-        send_json_error( 'Project not found.', 404 );
-    }
-
-    $manager->deleteProject( $id );
-    send_json_success( 'Project deleted successfully.' );
 }

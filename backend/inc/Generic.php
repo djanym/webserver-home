@@ -40,7 +40,7 @@ class Generic {
      *
      * @return void
      */
-    public function sendJsonResponse( array|string $data = null, int $status_code = null ) : void {
+    public function sendJsonResponse( array|string $data = null, int $status_code = null, bool $skip_error_checking = false ) : void {
         // Default value.
         $response = [ 'success' => true ];
 
