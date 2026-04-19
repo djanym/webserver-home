@@ -13,7 +13,12 @@ const AppShell = ({ title, headerAction, children }) => {
 
             <header className="app-header">
                 <div className="container">
-                    <h1 className="app-title">{title}</h1>
+                    <div className="header-left">
+                        <h1 className="app-title">{title}</h1>
+                        <div className="search-placeholder">
+                            <input type="text" placeholder="Search projects..." disabled />
+                        </div>
+                    </div>
                     {headerAction ? (
                         <button
                             type="button"

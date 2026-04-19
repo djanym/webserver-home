@@ -17,7 +17,7 @@ const ProjectList = ({ projects }) => {
     return (
         <div className="project-list">
             <h2 className="section-title">Projects ({projects.length})</h2>
-            <div className="project-grid">
+            <div className="project-rows-container">
                 {projects.map((project) => (
                     <ProjectCard key={project.id} project={project} />
                 ))}
