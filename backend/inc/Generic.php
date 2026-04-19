@@ -40,26 +40,32 @@ class Generic {
      *
      * @return void
      */
-    public function sendJsonResponse( array|string $data = null, int $status_code = null, bool $skip_error_checking = false ) : void {
+    public function sendJsonResponse( array|string|null $data = null, int $status_code = null, bool $skip_error_checking = false ) : void {
+        // If object has errors, then switch to error message response. Except when skip_error_checking is true.
+        if ( ! $skip_error_checking && $this->error->hasErrors() ) {
+            $this->sendErrorResponse( null, $status_code );
+
+            return;
+        }
+
         // Default value.
         $response = [ 'success' => true ];
 
-        // Prepare errors data response.
-        if ( $this->error->hasErrors() ) {
-            $this->sendErrorResponse( null, $status_code );
-        } else {
-            if ( ! empty( $data ) && is_string( $data ) ) {
+        if ( isset( $data ) ) {
+            if ( is_string( $data ) ) {
                 $response['message'] = $data;
+            } elseif ( is_array( $data ) ) {
+                $response['data'] = $data;
             }
-
-            // Add additional data to the response.
-            if ( $this->additionalResponseData ) {
-                $response = array_merge( $response, $this->additionalResponseData );
-            }
-
-            // Send response.
-            send_json( $response, $status_code );
         }
+
+        // Add additional data to the response.
+        if ( $this->additionalResponseData ) {
+            $response = array_merge( $response, $this->additionalResponseData );
+        }
+
+        // Send response.
+        send_json( $response, $status_code );
     }
 
     /**

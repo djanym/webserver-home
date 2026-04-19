@@ -50,20 +50,3 @@ function CreateProjectCb() : void {
 
     $manager->sendJsonResponse( $response_data, 201, true );
 }
-
-function pmUpdateProject( string $id ) : void {
-    $manager = ProjectsManager::get_instance();
-
-    if ( ! $manager->projectExists( $id ) ) {
-        send_json_error( 'Project not found.', 404 );
-    }
-
-    $input = json_decode( file_get_contents( 'php://input' ), true );
-
-    if ( ! $input ) {
-        send_json_error( 'Invalid request data.', 400 );
-    }
-
-    $project = $manager->updateProject( $id, $input );
-    send_json_success( [ 'project' => $project ] );
-}
