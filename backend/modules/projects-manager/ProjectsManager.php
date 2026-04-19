@@ -23,20 +23,6 @@ class ProjectsManager extends Generic {
      */
     private static ?self $instance = null;
 
-    /**
-     * Path to the server configuration file.
-     *
-     * @var string
-     */
-//    private string $configPath;
-
-    /**
-     * Path to the server root directory.
-     *
-     * @var string
-     */
-//    private string $serverRoot;
-
     private array $createProjectFields = [
         'title'               => [
             'always_required',
@@ -235,7 +221,7 @@ class ProjectsManager extends Generic {
         $project_registry['document_root'] = $www_root;
 
         $vhost_file = $this->createApacheVhostFile( $project_registry );
-        if ( ! $vhost_file ) {
+        if ( $vhost_file === false ) {
             $log_warnings[] = [
                 'code'    => 'vhost_file_failed',
                 'message' => 'Virtual host file was not created.',
@@ -247,14 +233,11 @@ class ProjectsManager extends Generic {
             $log[] = ' - Failed to create Apache vhost file for the project. Please check the server logs for more details.';
         } else {
             $log[]                          = '+ Apache vhost file created: ' . $vhost_file;
-            $project_registry['vhost_file'] = (string) $vhost_file;
+            $project_registry['vhost_file'] = $vhost_file;
         }
 
         // Set project status based on the warnings and errors.
-        $project_registry['status'] = $this->prepareProjectStatus( $log_warnings, null ); // Currently all issues are treated as warnings. Later we can add errors and warnings.
-
-        // Initial message.
-        $project_message = 'Project created successfully.';
+        $project_registry['status'] = $this->prepareProjectStatus( $log_warnings, [] ); // Currently, all issues are treated as warnings. Later we can add errors and warnings.
 
         if ( $project_registry['status'] !== 'active' ) {
             $log[] = 'Project was created, but some issues occurred.';
@@ -283,29 +266,6 @@ class ProjectsManager extends Generic {
     public function updateProject( string $projectId, array $data ) : array {
         // @todo: Implement project update logic.
         return [];
-    }
-
-    /**
-     * Delete a project.
-     *
-     * @param string $projectId Project ID.
-     *
-     * @return bool True if deleted successfully.
-     */
-    public function deleteProject( string $projectId ) : bool {
-        // @todo: Implement project deletion logic.
-        return false;
-    }
-
-    /**
-     * Check if a project exists.
-     *
-     * @param string $projectId Project ID.
-     *
-     * @return bool True if project exists.
-     */
-    public function projectExists( string $projectId ) : bool {
-        return null !== $this->getProject( $projectId );
     }
 
     /**
@@ -376,10 +336,10 @@ class ProjectsManager extends Generic {
     }
 
     /**
-     * Retrieve all projects data. Reads the main projects registry file, then each project registry file, and finally
-     * returns an array of project data.
+     * Retrieve all projects data. Reads the main projects registry file,
+     * then each project registry file, and finally returns an array of project data.
      *
-     * @throws JsonException
+     * @return array Array of project data.
      */
     public function getAllProjects() : array {
         $projects = [];
@@ -390,7 +350,7 @@ class ProjectsManager extends Generic {
         }
 
         foreach ( $registry['projects'] as $project_slug => $project_data ) {
-            $project = $this->readProjectRegistry( $project_data['registered_registry_path'] ?? '', false );
+            $project = $this->readProjectRegistry( $project_data['registered_registry_path'] ?? '' );
             if ( ! empty( $project ) ) {
                 $projects[] = $project;
             }
@@ -406,7 +366,6 @@ class ProjectsManager extends Generic {
      * @param string $slug Project slug.
      *
      * @return array|null Project data or null if not found.
-     * @throws JsonException
      */
     public function getProject( string $slug ) : ?array {
         if ( '' === $slug ) {
@@ -429,10 +388,6 @@ class ProjectsManager extends Generic {
         }
 
         return null;
-    }
-
-    private function isTruthy( mixed $value ) : bool {
-        return in_array( strtolower( (string) $value ), [ '1', 'true', 'yes', 'on' ], true );
     }
 
     private function prepareProjectRootPath( array $project_data ) : string|false {
@@ -488,7 +443,6 @@ class ProjectsManager extends Generic {
      *
      * @return array|null Returns the registry data as an associative array, or null if there was an error.
      *                    If no projects are registered, an empty array will be returned.
-     * @throws JsonException
      */
     private function readMainRegistry( bool $create_default = true ) : array|null {
         $default_registry = [
@@ -516,9 +470,17 @@ class ProjectsManager extends Generic {
                 return null;
             }
 
+            try {
+                $encoded_registry = json_encode( $default_registry, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+            } catch ( JsonException $e ) {
+                $this->error->add( 'main_projects_registry', 'Failed to encode the default registry data to JSON. Error: ' . $e->getMessage() );
+
+                return null;
+            }
+
             if ( false === file_put_contents(
                     $registry_path,
-                    json_encode( $default_registry, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ),
+                    $encoded_registry,
                     LOCK_EX
                 ) ) {
                 $this->error->add( 'main_projects_registry', 'Failed to create the main projects registry file.' );
@@ -559,7 +521,6 @@ class ProjectsManager extends Generic {
      * @param bool   $create_default Create a default registry file if it does not exist.
      *
      * @return array|null
-     * @throws JsonException
      */
     public function readProjectRegistry( string $registry_path, bool $create_default = false ) : array|null {
         $registry_path = normalizePath( trim( $registry_path ) );
@@ -576,9 +537,17 @@ class ProjectsManager extends Generic {
                         'registered_registry_path' => $fallback_registry_path,
                     ];
 
+                    try {
+                        $encoded_registry = json_encode( $default_project_registry, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
+                    } catch ( JsonException $e ) {
+                        $this->error->add( 'project_registry', 'Failed to encode the default project registry data to JSON. Error: ' . $e->getMessage() );
+
+                        return null;
+                    }
+
                     if ( false === file_put_contents(
                             $fallback_registry_path,
-                            json_encode( $default_project_registry, JSON_THROW_ON_ERROR | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ),
+                            $encoded_registry,
                             LOCK_EX ) ) {
                         $this->error->add( 'project_registry', 'Failed to write the default project registry file.' );
 
@@ -790,7 +759,7 @@ class ProjectsManager extends Generic {
         return array_map( static function( $folder_name ) use ( $slug ) { return str_replace( '{slug}', $slug, (string) $folder_name ); }, $configured_structure );
     }
 
-    private function createApacheVhostFile( array $project ) : bool {
+    private function createApacheVhostFile( array $project ) : false|string {
         $template_path = (string) config( 'path_to_vhost_tpl_file', '' );
         if ( '' === $template_path || ! file_exists( $template_path ) ) {
             $this->error->add( 'vhost', 'Virtual host template file does not exist.' );
@@ -838,6 +807,6 @@ class ProjectsManager extends Generic {
             return false;
         }
 
-        return true;
+        return $vhost_path;
     }
 }
