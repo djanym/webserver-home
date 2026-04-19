@@ -33,26 +33,107 @@ const MoreIcon = () => (
     </svg>
 );
 
+const WarningIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3l-8.47-14.14a2 2 0 0 0-3.42 0z"></path>
+        <line x1="12" y1="9" x2="12" y2="13"></line>
+        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+    </svg>
+);
+
+const ErrorIcon = () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="10"></circle>
+        <line x1="15" y1="9" x2="9" y2="15"></line>
+        <line x1="9" y1="9" x2="15" y2="15"></line>
+    </svg>
+);
+
+const normalizeIssueList = (issues) => {
+    if (!Array.isArray(issues)) {
+        return [];
+    }
+
+    return issues
+        .map((issue, index) => {
+            if (typeof issue === 'string') {
+                const message = issue.trim();
+                return message ? { id: `issue-${index}`, message } : null;
+            }
+
+            if (!issue || typeof issue !== 'object') {
+                const message = String(issue || '').trim();
+                return message ? { id: `issue-${index}`, message } : null;
+            }
+
+            const message = String(issue.message || issue.error || issue.text || '').trim();
+
+            if (!message) {
+                return null;
+            }
+
+            return {
+                id: issue.code ? `${issue.code}-${index}` : `issue-${index}`,
+                code: issue.code || null,
+                message,
+                details: typeof issue.details === 'string' ? issue.details.trim() : (issue.details ? String(issue.details).trim() : ''),
+            };
+        })
+        .filter(Boolean);
+};
+
+const getIssueSummary = (count, label) => `${count} ${label}${count === 1 ? '' : 's'}`;
+
 const ProjectCard = ({ project }) => {
-    const { id, title, domain, status, path, client_name } = project;
+    const {
+        title,
+        domain,
+        status,
+        client_name,
+        project_root_path,
+        document_root,
+        vhost_file,
+        created_at,
+        updated_at,
+        errors,
+    } = project;
     const [isExpanded, setIsExpanded] = useState(false);
+    const normalizedErrors = normalizeIssueList(errors);
+    const hasIssues = normalizedErrors.length > 0;
+    const resolvedStatus = status;
+    const statusClass = resolvedStatus === 'active'
+        ? 'status-active'
+        : (resolvedStatus === 'error' ? 'status-error' : (resolvedStatus === 'warning' ? 'status-warning' : 'status-inactive'));
+    const projectKey = project.slug;
 
     const toggleExpand = () => setIsExpanded(!isExpanded);
 
-    const statusClass = status === 'active' ? 'status-active' : (status === 'error' ? 'status-error' : 'status-inactive');
-
     return (
-        <div className={`project-row ${isExpanded ? 'expanded' : ''}`} data-project-id={id}>
+        <div className={`project-row ${isExpanded ? 'expanded' : ''} ${hasIssues ? 'has-issues' : ''}`} data-project-id={projectKey}>
             <div className="project-row-main">
-                <div className="project-title-col" onClick={toggleExpand}>
+                <button type="button" className="project-title-col" onClick={toggleExpand} aria-expanded={isExpanded}>
                     <h3 className="project-name-text">{title}</h3>
                     <div className="project-secondary-text">{domain}</div>
-                </div>
+                </button>
                 <div className="project-status-col">
-                    <span className={`status-indicator ${statusClass}`} title={status}></span>
+                    <span className={`status-indicator ${statusClass}`} title={resolvedStatus}></span>
+                </div>
+                <div className="project-issue-col">
+                    {normalizedErrors.length > 0 ? (
+                        <button
+                            type="button"
+                            className="issue-badge error"
+                            onClick={toggleExpand}
+                            title={`${getIssueSummary(normalizedErrors.length, 'error')} - click to view details`}
+                            aria-label={`${getIssueSummary(normalizedErrors.length, 'error')}`}
+                        >
+                            <ErrorIcon />
+                            <span>{normalizedErrors.length}</span>
+                        </button>
+                    ) : null}
                 </div>
                 <div className="project-actions-col">
-                    <a href={`http://${domain}`} target="_blank" rel="noopener noreferrer" className="action-icon-btn" title="Open URL">
+                    <a href={`https://${domain}`} target="_blank" rel="noopener noreferrer" className="action-icon-btn" title="Open URL">
                         <OpenIcon />
                     </a>
                     <button className="action-icon-btn" title="Browse Files">
@@ -74,8 +155,16 @@ const ProjectCard = ({ project }) => {
                             <span className="detail-value">{domain}</span>
                         </div>
                         <div className="detail-item">
-                            <span className="detail-label">Path:</span>
-                            <span className="detail-value">{path}</span>
+                            <span className="detail-label">Project root:</span>
+                            <span className="detail-value">{project_root_path || project.registered_root_path || ''}</span>
+                        </div>
+                        <div className="detail-item">
+                            <span className="detail-label">Document root:</span>
+                            <span className="detail-value">{document_root || ''}</span>
+                        </div>
+                        <div className="detail-item">
+                            <span className="detail-label">Vhost file:</span>
+                            <span className="detail-value">{vhost_file || ''}</span>
                         </div>
                         {client_name && (
                             <div className="detail-item">
@@ -83,7 +172,37 @@ const ProjectCard = ({ project }) => {
                                 <span className="detail-value">{client_name}</span>
                             </div>
                         )}
+                        {created_at && (
+                            <div className="detail-item">
+                                <span className="detail-label">Created:</span>
+                                <span className="detail-value">{created_at}</span>
+                            </div>
+                        )}
+                        {updated_at && (
+                            <div className="detail-item">
+                                <span className="detail-label">Updated:</span>
+                                <span className="detail-value">{updated_at}</span>
+                            </div>
+                        )}
                     </div>
+
+                    {normalizedErrors.length > 0 && (
+                        <div className="project-issue-section error-section">
+                            <h4 className="issue-section-title">
+                                <ErrorIcon />
+                                Errors
+                            </h4>
+                            <ul className="issue-list">
+                                {normalizedErrors.map((issue) => (
+                                    <li key={issue.id} className="issue-list-item">
+                                        {issue.code ? <div className="issue-code">{issue.code}</div> : null}
+                                        <div className="issue-message">{issue.message}</div>
+                                        {issue.details ? <div className="issue-details">{issue.details}</div> : null}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
             )}
         </div>
@@ -91,4 +210,3 @@ const ProjectCard = ({ project }) => {
 };
 
 export default ProjectCard;
-

@@ -31,7 +31,7 @@ const DEFAULT_RULE_MESSAGES = {
 
 const RESPONSE_TYPES = ['error', 'success', 'info'];
 
-const normalizeResponseType = (type, fallback = 'success') => {
+const filterResponseType = (type, fallback = 'success') => {
     if (typeof type !== 'string') {
         return fallback;
     }
@@ -44,8 +44,48 @@ const normalizeErrorMessage = (errorMessage) => {
         return errorMessage.trim();
     }
 
+    if (errorMessage && typeof errorMessage === 'object') {
+        if (typeof errorMessage.message === 'string') {
+            return errorMessage.message.trim();
+        }
+
+        if (typeof errorMessage.error === 'string') {
+            return errorMessage.error.trim();
+        }
+    }
+
     return String(errorMessage || '').trim();
 };
+
+// export const normalizeBackendIssues = (issues) => {
+//     if (!issues) {
+//         return [];
+//     }
+//
+//     if (typeof issues === 'string') {
+//         const normalized = issues.trim();
+//         return normalized ? [normalized] : [];
+//     }
+//
+//     if (Array.isArray(issues)) {
+//         return issues.flatMap((issue) => normalizeBackendIssues(issue));
+//     }
+//
+//     if (typeof issues === 'object') {
+//         const preferredMessage = normalizeErrorMessage(
+//             issues.message || issues.error || issues.text || issues.label || issues.value || ''
+//         );
+//
+//         if (preferredMessage) {
+//             return [preferredMessage];
+//         }
+//
+//         return Object.entries(issues).flatMap(([, issue]) => normalizeBackendIssues(issue));
+//     }
+//
+//     const normalized = String(issues).trim();
+//     return normalized ? [normalized] : [];
+// };
 
 const splitBackendErrors = (backendErrors, knownFieldNames) => {
     const fieldErrors = {};
@@ -268,9 +308,14 @@ export const formSubmitFn = ({
         }
 
         setResponseMessage(message);
-        setResponseType(normalizeResponseType(type));
-        setResponseErrors(Array.isArray(errors) ? errors.filter(Boolean) : []);
+        setResponseType(filterResponseType(type));
+        setResponseErrorList(errors);
     }, [clearResponse]);
+
+    // Wrapper for errors setter. Just filters values.
+    const setResponseErrorList = useCallback((errors = []) => {
+        setResponseErrors(Array.isArray(errors) ? errors.filter(Boolean) : []);
+    }, []);
 
     // Removes one field error so UI can react immediately when the user edits that field.
     const clearFieldError = useCallback((fieldName) => {
@@ -300,10 +345,6 @@ export const formSubmitFn = ({
         setErrors((prev) => ({ ...prev, ...fieldErrors }));
     }, []);
 
-    const setResponseErrorList = useCallback((errors = []) => {
-        setResponseErrors(Array.isArray(errors) ? errors.filter(Boolean) : []);
-    }, []);
-
     const executeSubmit = useCallback(async (data) => {
         if (!onSubmit) {
             return;
@@ -316,10 +357,16 @@ export const formSubmitFn = ({
 
         try {
             const result = await onSubmit(data);
+            // const backendIssues = normalizeBackendIssues(result?.errors);
+            const backendIssues = result?.errors || [];
 
             // Show general message only if we have it.
             if (result?.message && typeof result.message === 'string' && result.message.trim().length > 0) {
-                setResponse(result.message, 'success');
+                setResponse(result.message, backendIssues.length > 0 ? 'info' : 'success', backendIssues);
+            } else if (backendIssues.length > 0) {
+                setResponseMessage(null);
+                setResponseType('info');
+                setResponseErrorList(backendIssues);
             }
 
             // onSuccess callback can be provided when formFn() is called.
@@ -636,8 +683,9 @@ export const formFn = (
         }
 
         // If no errors, then submit. Backend check also will happen.
-        const submitResult = await formSubmit.executeSubmit(getFormValues());
-        return submitResult;
+        // const submitResult = await formSubmit.executeSubmit(getFormValues());
+        // return submitResult;
+        return formSubmit.executeSubmit(getFormValues());
     }, [formSubmit, validateForm, getFormValues]);
 
     // Initialize form functionality. Attaches events handlers.

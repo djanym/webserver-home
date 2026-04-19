@@ -1,6 +1,21 @@
-check guidelines.md and code-style.md.
-then create project listing with the add project form. including template, styles, frontend part and backend. the initial code already exists. so anallyze first it, then add yours.
-don't add backend functionality. only required routes, classes, functions, and placeholders as response.
+Task:
+Review this requirements and apply updates to fix and implement required:
+1. project can be created but errors still can happen. so it can return 'success = true' but errors also can be.
+2. when sending json response you should switch to sendErrorResponse() only when $skip_error_checking is false.
+otherwise you should send 'success = true' and errors data.
+
+3. Also, in that case errors can be general, not field related. Anyway, keep it universal.
+
+4. then in the frontend, you should check if there is success but error data also comes. in that case it means that the action happened and it should go to the next step (such as showing the main listing with updated data). but also show what happened regarding the errors. usually, response also has `message` (something like "Project was created, but some errors occurred. Review the errors") - so I need some UI solution to show that: errors and message. There is 'notifications' functionality which can be used.
+
+5. When during project creation - it was created but with some errors, we can add in main registry file a field like 'warnings' and 'errors' - for each project separately. So when we list projects, it can show warnings and errors icons and description regarding what exactly there happened.
+
+6. For example, now project can be created but vhost is missing. In that case in the listing we can add a warning icon with tooltip "Project created, but virtual host configuration failed. Please check the error log for details.". Error/warning message should be stored in main projects registry file.
+
+7. UI for showing errors and warnings: icon can be warning or error. Clicking on it - project row will be expanded and details showed.
+
+
+------------------
 
 These features may be implemented later:
 •	Project export
@@ -13,24 +28,6 @@ These features may be implemented later:
 •	Project templates
 
 
-# Project Creation Workflow
-
-User inputs:
-
-- Project name
-- Slug
-- Domain
-- Metadata
-
-App automatically:
-
-- Create project folder
-- Create subfolders
-- Create `project-config.php`
-- Create boilerplate files
-- Create Apache virtual host
-- Register in `server-config.php`
-
 -------------
 
 
@@ -41,51 +38,17 @@ App automatically:
 Import steps:
 
 1. Copy project folder to server root
-2. Select `project-config.php`
-3. Register project
+2. Select project registry file.
+3. Registers project.
 
 Rules:
 
 - Import must not modify project
 - Project remains portable
 
------------------
+-----------------------
 
-UI Description - Dashboard and Project Management Interface
-Main Dashboard Layout
-Direct Access:
-No login form or authentication screen on startup
-Application loads directly to the main dashboard
-Clean, immediate access to project management functionality
 
-Dashboard Structure:
-Header with application title and main action buttons
-Primary content area displaying project listing
-Footer with system status or quick actions (optional)
-
-Project Listing Interface
-
-Vertical List Layout (Total Commander Style):
-Projects displayed in a vertical list format similar to file manager interfaces
-Each project occupies one row with consistent spacing and alignment
-Alternating row colors or subtle borders for visual separation
-Sortable columns (Name, Created Date, Last Modified, Status)
-
-Project Row Components:
-Project Icon: Visual indicator (folder icon, project type icon, or custom favicon)
-Project Name: Clickable project title/name (primary action)
-Project Details: Subdomain, path, or other metadata displayed as secondary text
-Status Indicator: Visual status (active, inactive, error) with color coding
-Action Icons: Right-aligned horizontal row of action buttons
-
-Action Icons per Project Row:
-Open/Browse: Navigate to project URL or file browser
-Backup: Create project archive/backup
-Settings: Edit project configuration
-Virtual Host: Manage Apache configuration
-Delete: Remove project (with confirmation)
-View error log file.
-More Actions: Dropdown menu for additional options
 
 Project Interaction Behavior
 

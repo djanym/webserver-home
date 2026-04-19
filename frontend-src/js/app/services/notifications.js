@@ -13,34 +13,18 @@ let notificationSequence = 0;
 
 const allowedTypes = ['success', 'info', 'error', 'warning'];
 
+const filterType = (type) => (allowedTypes.includes(type) ? type : 'info');
+
+/**
+ * Create a shallow clone of a notification object, ensuring the errors array is also cloned if it exists.
+ *
+ * @param notification
+ * @returns {*&{errors: *[]}}
+ */
 const cloneNotification = (notification) => ({
     ...notification,
     errors: Array.isArray(notification.errors) ? [...notification.errors] : []
 });
-
-const normalizeType = (type) => (allowedTypes.includes(type) ? type : 'info');
-
-const normalizeText = (value) => {
-    if (typeof value === 'string') {
-        return value.trim();
-    }
-
-    if (value === null || value === undefined) {
-        return '';
-    }
-
-    return String(value).trim();
-};
-
-const normalizeList = (value) => {
-    if (!Array.isArray(value)) {
-        return [];
-    }
-
-    return value
-        .map((item) => normalizeText(item))
-        .filter(Boolean);
-};
 
 const notifyListeners = () => {
     const snapshot = notifications.map(cloneNotification);
@@ -111,40 +95,28 @@ export const subscribeNotifications = (listener) => {
 /**
  * Publish a notification that can be rendered by the global host.
  *
- * Supports the legacy signature showNotification(message, type, autoHide, autoHideDelay)
- * and the newer options object showNotification(message, type, { autoHide, autoHideDelay, errors }).
- *
  * @param {string} message
  * @param {string} type
- * @param {boolean|Object} options
- * @param {number} legacyAutoHideDelay
+ * @param {number} autoHideDelay
+ * @param {Object} options
  * @returns {string|null}
  */
-export function showNotification(message, type = 'info', options = true, legacyAutoHideDelay = 5000) {
-    const resolvedMessage = normalizeText(message);
-
-    if (!resolvedMessage) {
-        return null;
-    }
-
-    const isLegacySignature = typeof options === 'boolean';
-    const resolvedOptions = isLegacySignature
-        ? { autoHide: options, autoHideDelay: legacyAutoHideDelay }
-        : (options && typeof options === 'object' ? options : {});
-
-    const autoHide = resolvedOptions.autoHide !== undefined ? Boolean(resolvedOptions.autoHide) : true;
-    const autoHideDelay = Number.isFinite(Number(resolvedOptions.autoHideDelay))
-        ? Number(resolvedOptions.autoHideDelay)
-        : 5000;
+export function showNotification(message, type = 'info', autoHideDelay = 5000, options = {}) {
+    // Merge passed options with default options.
+    options = { ...{
+            autoHide: true,
+            autoHideDelay: autoHideDelay,
+            errors: []
+        }, ...options };
 
     const notification = {
         id: `notification-${Date.now()}-${++notificationSequence}`,
-        message: resolvedMessage,
-        type: normalizeType(type),
-        autoHide,
-        autoHideDelay,
-        errors: normalizeList(resolvedOptions.errors),
-        meta: resolvedOptions.meta || null,
+        message: message || '',
+        type: filterType(type),
+        autoHide: options.autoHide !== false,
+        autoHideDelay: options.autoHideDelay || 5000,
+        errors: options.errors || null,
+        meta: options.meta || null,
         createdAt: new Date().toISOString()
     };
 

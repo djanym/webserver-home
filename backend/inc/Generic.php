@@ -56,6 +56,19 @@ class Generic {
                 $response['message'] = $data;
             } elseif ( is_array( $data ) ) {
                 $response['data'] = $data;
+
+                if ( ! empty( $data['message'] ) ) {
+                    $response['message'] = $data['message'];
+                }
+            }
+        }
+
+        // Errors can happen even if action was successful.
+        //So we need to check if there are errors and add them to the response.
+        if ( $this->error->hasErrors() ) {
+            // Create an array of error messages in format: error code => error message.
+            foreach ( $this->error->getErrorCodes() as $code ) {
+                $response['errors'][ $code ] = $this->error->getErrorMessage( $code );
             }
         }
 

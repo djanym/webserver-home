@@ -13,12 +13,12 @@ const apiProjectsRequest = (apiRoute = '', data = null, method = 'POST') => {
 
 export const apiFetchProjects = async () => {
     const data = await apiProjectsRequest('', null, 'GET');
-    return data.data;
+    return data.data || data;
 };
 
 export const apiCreateProject = async (projectData) => {
     const data = await apiProjectsRequest('add', projectData);
-    return data.data?.project || data.data;
+    return data.data || data;
 };
 
 export const apiUpdateProject = async (projectId, projectData) => {

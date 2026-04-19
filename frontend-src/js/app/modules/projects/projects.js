@@ -36,7 +36,8 @@ const ProjectsModule = ({ setHeaderAction }) => {
         try {
             setLoadingIndicator(true);
             const data = await apiFetchProjects();
-            setProjects(data.projects || []); // Store projects in state.
+            // Store projects in state.
+            setProjects(Array.isArray(data.projects) ? data.projects : []);
             setError(null); // Clear any previous errors.
         } catch (err) {
             setError('Failed to load projects'); // Show error message.
@@ -81,7 +82,28 @@ const ProjectsModule = ({ setHeaderAction }) => {
 
     // Add new project to list and close form
     const handleProjectAdded = (newProject) => {
-        setProjects((prev) => [...prev, newProject]); // Add to existing projects
+        if (newProject && typeof newProject === 'object') {
+            setProjects((prev) => {
+                const projectKey = newProject.slug;
+                // Search for existing project with same slug.
+                const existingIndex = prev.findIndex((project) => (
+                    (project.slug && project.slug === projectKey)
+                ));
+
+                if (existingIndex === -1) {
+                    return [...prev, newProject];
+                }
+
+                const nextProjects = [...prev];
+                nextProjects[existingIndex] = {
+                    ...nextProjects[existingIndex],
+                    ...newProject,
+                };
+
+                return nextProjects;
+            });
+        }
+
         toggleCreateProjectForm(false); // Hide the form
     };
 

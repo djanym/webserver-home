@@ -5,10 +5,11 @@
 import React, { useState } from 'react';
 import { apiCreateProject } from '../projects-api';
 import { useAppConfig } from '../../../services/config-context';
-import { formFn } from '../../../services/forms';
+import { formFn, normalizeBackendIssues } from '../../../services/forms';
 import { slugify } from '../../../services/helpers';
 import ManagedForm from '../../../components/ManagedForm';
 import FormResponse from '../../../components/FormResponse';
+import { showNotification } from '../../../services/notifications';
 
 const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
     // App configuration context from the app backend.
@@ -38,9 +39,24 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
     };
 
     // What happens if backend returns success.
-    const handleSuccess = () => {
-        alert('Project created successfully!');
-        onProjectAdded();
+    const handleSuccess = (result = {}) => {
+        const createdProject = result.project || null;
+        // const issues = normalizeBackendIssues(result.errors || []);
+        const issues = result.errors || [];
+        const notificationType = issues.length > 0 ? 'warning' : 'success';
+        const notificationMessage = result.message
+            || 'Done';
+
+        showNotification(notificationMessage, notificationType, {
+            autoHide: issues.length === 0,
+            autoHideDelay: issues.length === 0 ? 5000 : 0,
+            errors: issues
+        });
+
+        if (typeof onProjectAdded === 'function') {
+            onProjectAdded(createdProject);
+        }
+
         reset();
         setSlugEdited(false);
     };

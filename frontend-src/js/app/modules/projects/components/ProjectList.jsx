@@ -19,7 +19,7 @@ const ProjectList = ({ projects }) => {
             <h2 className="section-title">Projects ({projects.length})</h2>
             <div className="project-rows-container">
                 {projects.map((project) => (
-                    <ProjectCard key={project.id} project={project} />
+                    <ProjectCard key={project.slug} project={project} />
                 ))}
             </div>
         </div>
