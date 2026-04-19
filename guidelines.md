@@ -1,24 +1,25 @@
 # Webserver Home Manager - LLM Agent Guidelines
 
-Backend implementation directives for agents are in `guidelines-backend.md`.
+Backend implementation directives are in `guidelines-backend.md`.
+
+- MUST load and follow `SKILL.md` for non-trivial planning/execution quality.
+- MUST load `project-features.txt` before implementation tasks to understand active features, flows, files, and functions.
+- MUST keep this file focused on general rules and architecture constraints.
+
+---
 
 # General Description
 
-Webserver Home Manager is a web dashboard for managing local web development projects and Apache virtual hosts.
+Webserver Home Manager is a browser dashboard for managing local web projects and Apache virtual host configuration through a file-driven backend.
 
-- App runs in browser
+## Core principles:
+
+- No database.
+- Config-driven behavior.
+- Managed projects remain independent and portable.
+- App folder and managed project folders stay separated.
 - App is located in a separate folder from managed projects
-- Projects are created/imported under a configurable server root
 - App manages project metadata and Apache vhost files through a file/config-driven backend
-- Each project is an independent website
-
-App automates:
-
-- Project creation
-- Project folder structure creation
-- Apache virtual host file generation
-- Project import and listing
-- Project management actions
 
 ---
 
@@ -31,54 +32,6 @@ App automates:
 | Project Registry | Per-project metadata file (`project.registry.json`) in project root |
 | Main Projects Registry | Global projects registry file (path from `path_to_projects_registry`) |
 | Server Config | Backend config in `/backend/config` (`server-config.php`, `app-config.php`) |
-
----
-
-# Architecture
-
-## Config-Driven (No Database)
-
-- No database
-- File-based configuration and registries
-
-## Rules
-
-- Projects must remain independent and portable
-- Runtime behavior must come from config files/env, not hardcoded machine paths
-- Module boundaries should stay strict (backend modules + frontend modules)
-
----
-
-# Structure
-
-## Server Root (Example)
-
-```text
-/server-root/
-|- project-1/
-|  `- project.registry.json
-|- project-2/
-|  `- project.registry.json
-`- .webserver-home/   (main projects registry folder)
-```
-
-## App Location (Example)
-
-```text
-/server-root/
-|- webserver-home/
-|  |- backend/
-|  |- frontend-src/
-|  `- frontend-public/
-|- project-1/
-`- project-2/
-```
-
-Rules:
-
-- App is not inside a managed project
-- Managed projects are not inside the app folder
-- App manages projects through configured paths
 
 ---
 
@@ -103,7 +56,6 @@ Rules:
 - Backend = PHP JSON API
 - Frontend = SPA
 - Communication = Fetch/AJAX
-- Build = Gulp + Webpack + Babel + Sass/PostCSS
 
 ---
 
@@ -126,13 +78,6 @@ Rules:
 
 Primary backend agent contract: `guidelines-backend.md`.
 
-## Rules
-
-- Backend root: `/backend`
-- API-only backend
-- JSON responses only
-- No business logic in route declaration files
-
 ## Routing
 
 - Router: AltoRouter
@@ -149,42 +94,25 @@ Primary backend agent contract: `guidelines-backend.md`.
   - `/backend/inc/Validator.php`
   - `/backend/inc/AppError.php`
 
-## Config
+---
 
-- Config files: `/backend/config/app-config.php`, `/backend/config/server-config.php`
-- Use environment/config driven values
-- Avoid hardcoded paths in feature code
+# Source of Truth by Purpose
+
+- `project-features.txt`: feature map, runtime behavior, route flow, involved files/functions.
+- `guidelines-backend.md`: backend implementation contract and backend-specific constraints.
+- `guidelines-cs.md`: coding style and naming/commenting/formatting rules.
+- `guidelines.md` (this file): global architecture constraints and agent behavior rules.
 
 ---
 
-# Frontend
+# Architecture Constraints
 
-## Rules
-
-- SPA only
-- No full-page reload workflow
-- API communication via shared wrapper
-
-## Frontend Module Rules
-
-- Shared API wrapper: `/frontend-src/js/app/services/api.js`
-- Module API helpers: `/frontend-src/js/app/modules/{module-name}/{module-name}-api.js`
-- API helper naming: `api{ActionName}`
-- Module UI entry: `/frontend-src/js/app/modules/{module-name}/{module-name}.js`
-- Module components stay inside module folder
-
----
-
-# CSS / SCSS
-
-- Source SCSS: `/frontend-src/scss/`
-- Output CSS: `/frontend-public/assets/css/`
-
-Rules:
-
-- Use SCSS source files
-- No inline styles for app UI
-- Keep selectors shallow and reusable
+- Runtime model: frontend SPA + backend PHP JSON API.
+- Configuration source: files in `backend/config` and public app config.
+- Module boundaries must stay strict:
+  - Backend modules in `backend/modules/{module-name}`.
+  - Frontend modules in `frontend-src/js/app/modules/{module-name}`.
+- Avoid hardcoded machine-specific paths in feature logic.
 
 ---
 
@@ -215,28 +143,32 @@ Rules:
 - Script: `run:gulp:css`
 
 ### Images and Fonts
-
 - Source images: `/frontend-src/images/` -> `/frontend-public/assets/images/`
 - Source fonts: `/frontend-src/fonts/` -> `/frontend-public/assets/fonts/`
 
----
+# Backend Global Rules
 
-# Code Style
-
-All technical code-style rules are maintained in `guidelines-cs.md`.
-
-- Always load and follow `guidelines-cs.md` before generating or editing code
-- Backend-specific implementation/style constraints live in `guidelines-backend.md`
-- Keep this file focused on architecture/runtime contracts, not low-level formatting rules
+- Backend root is `backend`.
+- API-only backend (JSON responses only).
+- Route declaration files must contain route mapping only (no business logic).
+- Reuse shared request-flow contracts in `backend/inc` for validation, errors, and response emission.
 
 ---
 
-# Design Rules
+# Frontend Global Rules
 
-- No database
-- Projects must remain portable between machines
-- Config-driven behavior
-- Keep architecture simple and maintainable
+- SPA workflow only (no full-page reload flow).
+- API communication must use shared request service.
+- Keep module APIs and module UI code inside their module folders.
+
+---
+
+# Design and Change Rules
+
+- Keep code minimal, practical, and maintainable.
+- Prefer config-driven logic over hardcoded behavior.
+- Do not add unnecessary abstractions/framework complexity.
+- Keep backward compatibility unless change request says otherwise.
 
 ---
 
@@ -244,12 +176,8 @@ All technical code-style rules are maintained in `guidelines-cs.md`.
 
 Always:
 
-- Keep code minimal and practical
-- Follow folder/module structure
-- Keep backend API-only and JSON-only
-- Prefer config-driven logic
-- Avoid heavy frameworks and unnecessary complexity
-- Keep projects portable
-- Load `guidelines-cs.md` for code style and naming/commenting standards
-- For backend tasks, load `guidelines-backend.md` before editing backend handlers/modules
-- Reuse `Generic`, `Validator`, and `AppError` contracts instead of duplicating request/validation/error plumbing
+- Read `project-features.txt` first for any feature or bug task.
+- Follow module/folder structure already used in the repository.
+- Load `guidelines-cs.md` before generating or editing code.
+- For backend work, load `guidelines-backend.md` before editing handlers/modules.
+- Reuse existing validation/error/response plumbing instead of duplicating it.

@@ -1,0 +1,224 @@
+PROJECT_FEATURES_INDEX
+version: v2
+updated_at: 2026-04-19
+scope: Features only (behavior, flows, and involved files/functions).
+
+READ_ORDER_FOR_AI
+1) Scan QUICK_INDEX.
+2) Open FLOW_MAP for request/response lifecycle.
+3) Open FEATURE_CATALOG item needed for current task.
+4) Open FILE_FUNCTION_INDEX for exact symbols.
+
+QUICK_INDEX
+- FE-APP: App shell and module mount.
+- FE-PROJECTS-LIST: Fetch and render project list.
+- FE-PROJECTS-CREATE: Create project form + submit lifecycle.
+- FE-PROJECT-CARD: Project status/details/issues UI.
+- FE-NOTIFICATIONS: Global notification bubbles.
+- FE-FORMS-ENGINE: Shared client-side validation and backend error mapping.
+- FE-API-ENGINE: Shared fetch wrapper and backend config bootstrap.
+- BE-ROUTER: Route bootstrap and module route loading.
+- BE-PROJECTS-MODULE: Projects CRUD endpoints and handlers.
+- BE-PROJECTS-CREATE-LOGIC: Registry/folder/vhost creation logic.
+- BE-VALIDATION-ENGINE: Generic + Validator rule pipeline.
+- BE-ERROR-ENGINE: AppError + JSON response emitters.
+- BE-APACHE-MODULE: Apache restart and config validation endpoints.
+
+FLOW_MAP
+[FLOW-001] App boot and initial data load
+- Entry: frontend-src/js/app/components/App.jsx -> AppShell + ProjectsModule.
+- ProjectsModule mount: frontend-src/js/app/modules/projects/projects.js.
+- Load backend public config: apiFetchBackendConfig() -> GET /public-config.
+- Load projects: apiFetchProjects() -> GET /projects.
+
+[FLOW-002] AJAX request lifecycle (frontend)
+- Config bootstrap: frontend-src/js/app/services/api.js::initApiConfig() loads frontend-public/app-public-config.json.
+- Request builder: apiRequest(apiRoute, data, method, options).
+- Error contract: throws Error when response.ok is false OR payload.success !== true.
+- Error shape on throw: error.status, error.payload, error.errors.
+
+[FLOW-003] Backend request lifecycle
+- Entry: backend/index.php -> backend/api.php.
+- Bootstrap: load_config(), handle_cors(), include shared classes, include module entry files.
+- Router: backend/routes.php creates AltoRouter and auto-loads backend/modules/*/routes.php.
+- Dispatch: matched target callback executes handler, then JSON is returned.
+
+[FLOW-004] Create project end-to-end
+- FE submit: CreateProjectForm -> formFn().handleSubmit() -> apiCreateProject().
+- API call: POST /projects/add.
+- Handler: backend/modules/projects-manager/handlers.php::CreateProjectCb().
+- Service: backend/modules/projects-manager/ProjectsManager.php::tryCreateProject().
+- Response branch A: 201 success with project payload.
+- Response branch B: 201 success plus issues in errors field (partial warnings).
+- Response branch C: 422 fail via sendErrorResponse() with keyed validation/runtime errors.
+
+FEATURE_CATALOG
+[FE-APP] App shell and global composition
+- behavior: Provides app layout and hosts global notifications.
+- files:
+  - frontend-src/js/app/components/App.jsx
+  - frontend-src/js/app/components/AppShell.jsx
+  - frontend-src/js/app/components/NotificationsHost.jsx
+
+[FE-PROJECTS-LIST] Projects listing module
+- behavior: Loads config and projects on mount; handles loading/error/empty/list states.
+- key_logic:
+  - projects.js::loadBackendConfig()
+  - projects.js::loadProjects()
+  - projects.js::handleProjectAdded() merges by slug (upsert behavior).
+- files:
+  - frontend-src/js/app/modules/projects/projects.js
+  - frontend-src/js/app/modules/projects/components/ProjectList.jsx
+
+[FE-PROJECTS-CREATE] Create project form
+- behavior: Runs client validation, submits normalized payload, shows response + notification, updates list.
+- key_logic:
+  - CreateProjectForm.jsx::projectValidationRules (required/slug/custom-path conditions).
+  - CreateProjectForm.jsx::onSubmit() normalizes custom_path_enabled/path_type/paths.
+  - CreateProjectForm.jsx::handleSuccess() pushes notification and calls onProjectAdded().
+- files:
+  - frontend-src/js/app/modules/projects/components/CreateProjectForm.jsx
+  - frontend-src/js/app/components/ManagedForm.jsx
+
+[FE-PROJECT-CARD] Project status and issue rendering
+- behavior: Renders card with expandable details; normalizes mixed issue payloads for display.
+- key_logic:
+  - ProjectCard.jsx::normalizeIssueList() handles string/object/mixed issue items.
+  - ProjectCard.jsx::statusClass maps status to UI classes.
+  - ProjectCard.jsx::toggleExpand() drives details and issue section visibility.
+- files:
+  - frontend-src/js/app/modules/projects/components/ProjectCard.jsx
+
+[FE-NOTIFICATIONS] Notification bubbles
+- behavior: Global pub-sub store with auto-hide timers; rendered by top-level host.
+- key_logic:
+  - notifications.js::showNotification(), closeNotification(), subscribeNotifications(), clearNotifications().
+  - NotificationsHost.jsx subscribes once and renders stacked message/error list UI.
+- files:
+  - frontend-src/js/app/services/notifications.js
+  - frontend-src/js/app/components/NotificationsHost.jsx
+
+[FE-FORMS-ENGINE] Form engine and frontend/backend error split
+- behavior: Collects form values, validates on client, executes submit, maps backend errors to field-level vs response-level.
+- key_logic:
+  - forms.js::validateFields() applies built-in and custom rules.
+  - forms.js::formSubmitFn().executeSubmit() handles success/error branches.
+  - forms.js::splitBackendErrors() separates known field keys from generic errors.
+- files:
+  - frontend-src/js/app/services/forms.js
+
+[FE-API-ENGINE] API service layer
+- behavior: Single request wrapper for all modules; enforces JSON success contract.
+- key_logic:
+  - api.js::initApiConfig() resolves API base URL once.
+  - api.js::apiRequest() performs fetch and strict success check.
+  - projects-api.js prefixes project endpoints via projects/* helper.
+- files:
+  - frontend-src/js/app/services/api.js
+  - frontend-src/js/app/modules/projects/projects-api.js
+
+[BE-ROUTER] Backend route bootstrap
+- behavior: Registers root routes and auto-loads module route files.
+- key_logic:
+  - backend/routes.php::glob(ABSPATH . '/modules/*/routes.php') and callable registration.
+  - backend/routes.php::router->match() dispatches target or 404 JSON error.
+- files:
+  - backend/routes.php
+
+[BE-PROJECTS-MODULE] Projects endpoints
+- behavior: Exposes list/get/create/update/delete routes for project records.
+- key_logic:
+  - routes.php maps /projects endpoints.
+  - handlers.php uses ProjectsManager singleton and returns JSON payloads.
+- files:
+  - backend/modules/projects-manager/routes.php
+  - backend/modules/projects-manager/handlers.php
+  - backend/modules/projects-manager/projects-manager.php
+
+[BE-PROJECTS-CREATE-LOGIC] Project creation internals
+- behavior: Validates input, resolves root path, creates registry files/folders, attempts vhost creation, computes status.
+- key_logic:
+  - ProjectsManager.php::tryCreateProject()
+  - ProjectsManager.php::createProject()
+  - ProjectsManager.php::prepareProjectRootPath()
+  - ProjectsManager.php::updateMainRegistryProjectRecord()
+  - ProjectsManager.php::createApacheVhostFile()
+- notes:
+  - Can return success with warnings; warnings are persisted and surfaced in project data.
+- files:
+  - backend/modules/projects-manager/ProjectsManager.php
+
+[BE-VALIDATION-ENGINE] Backend validation pipeline
+- behavior: Generic filters allowed fields, validates each using Validator rules, stores errors in AppError.
+- key_logic:
+  - Generic.php::filterValidateAll()
+  - Generic.php::validateField()
+  - Validator.php::validate() + rule_when(), rule_is_domain(), rule_is_path(), rule_allowed_chars(), rule_bool().
+- files:
+  - backend/inc/Generic.php
+  - backend/inc/Validator.php
+
+[BE-ERROR-ENGINE] Backend error and response contracts
+- behavior: Centralized keyed error aggregation and JSON response emission.
+- key_logic:
+  - AppError.php::add(), hasErrors(), getErrorCodes(), getErrorMessage().
+  - Generic.php::sendErrorResponse() -> success:false + errors map.
+  - Generic.php::sendJsonResponse() may include errors even when success:true.
+  - functions.php::send_json(), send_json_success(), send_json_error().
+- files:
+  - backend/inc/AppError.php
+  - backend/inc/Generic.php
+  - backend/inc/functions.php
+
+[BE-APACHE-MODULE] Apache utility endpoints
+- behavior: API endpoints to restart Apache and validate Apache config.
+- key_logic:
+  - handlers.php::wb_apache_base_restart_apache()
+  - handlers.php::wb_apache_base_validate_config()
+- files:
+  - backend/modules/apache-base/routes.php
+  - backend/modules/apache-base/handlers.php
+  - backend/inc/ApacheManager.php
+
+API_ROUTE_INVENTORY
+- GET /
+- GET /public-config
+- GET /projects
+- POST /projects/add
+- GET /projects/[project_slug:id]
+- PUT /projects/[a:id]
+- DELETE /projects/[a:id]
+- POST /apache/restart
+- POST /apache/validate
+
+BACKEND_RESPONSE_SHAPES
+- Success common: { success: true, data?: object, message?: string, errors?: object, ...additional }
+- Error common: { success: false, message?: string, errors?: object }
+- Note: frontend apiRequest() treats success !== true as thrown error branch.
+
+KNOWN_LOGIC_GAPS_FOR_AI
+- KG-001 status naming mismatch:
+  - Backend create flow sets statuses like has_warnings/has_errors in ProjectsManager::prepareProjectStatus().
+  - ProjectCard visual mapping expects active/error/warning/inactive in ProjectCard.jsx::statusClass.
+  - Impact: warning/error indicator styling can be inconsistent for newly created projects with warnings.
+- KG-002 notification API call shape mismatch:
+  - notifications.js::showNotification(message, type, autoHideDelay, options).
+  - CreateProjectForm calls showNotification(message, type, { ...options }) with options object as third argument.
+  - Impact: auto-hide timing/options can behave unexpectedly.
+- KG-003 forms service import drift in CreateProjectForm:
+  - CreateProjectForm imports normalizeBackendIssues from forms.js, but normalized export is currently not active.
+  - Impact: build/runtime import issues depending on bundler strictness.
+
+FILE_FUNCTION_INDEX
+- frontend-src/js/app/services/api.js: initApiConfig, apiRequest, apiFetchBackendConfig
+- frontend-src/js/app/modules/projects/projects-api.js: apiFetchProjects, apiCreateProject, apiUpdateProject, apiDeleteProject
+- frontend-src/js/app/services/forms.js: formFn, formSubmitFn, validateFields, splitBackendErrors
+- frontend-src/js/app/services/notifications.js: showNotification, subscribeNotifications, closeNotification
+- frontend-src/js/app/modules/projects/components/CreateProjectForm.jsx: handleSuccess, onSubmit payload normalization
+- frontend-src/js/app/modules/projects/components/ProjectCard.jsx: normalizeIssueList, toggleExpand
+- backend/routes.php: module route auto-discovery and dispatch
+- backend/modules/projects-manager/handlers.php: pmGetAllProjects, pmGetProject, CreateProjectCb
+- backend/modules/projects-manager/ProjectsManager.php: tryCreateProject, createProject, filterValidateSpecific, getAllProjects
+- backend/inc/Generic.php: filterValidateAll, validateField, sendJsonResponse, sendErrorResponse
+- backend/inc/Validator.php: validate and rule_* validators
+- backend/inc/AppError.php: add/get/merge error container
