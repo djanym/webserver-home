@@ -105,19 +105,17 @@ export function showNotification(message, type = 'info', autoHideDelay = 5000, o
     // Merge passed options with default options.
     options = { ...{
             autoHide: true,
-            autoHideDelay: autoHideDelay,
-            errors: []
+            autoHideDelay: autoHideDelay
         }, ...options };
+
+    console.log('showNotification for seconds', options.autoHideDelay / 1000);
 
     const notification = {
         id: `notification-${Date.now()}-${++notificationSequence}`,
         message: message || '',
         type: filterType(type),
-        autoHide: options.autoHide !== false,
-        autoHideDelay: options.autoHideDelay || 5000,
-        errors: options.errors || null,
-        meta: options.meta || null,
-        createdAt: new Date().toISOString()
+        autoHide: options.autoHide,
+        autoHideDelay: options.autoHideDelay
     };
 
     notifications = [...notifications, notification];

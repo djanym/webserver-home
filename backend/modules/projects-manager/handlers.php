@@ -45,7 +45,9 @@ function CreateProjectCb() : void {
     $response_data = [ 'project' => $project_data ];
 
     if ( $manager->hasErrors() ) {
-        $response_data['message'] = 'Project was created, but some errors occurred. Review the errors.';
+        $response_data['message'] = 'Project was created, but some errors occurred. Review the errors in project details.';
+    } else {
+        $response_data['message'] = 'Project was created successfully.';
     }
 
     $manager->sendJsonResponse( $response_data, 201, true );

@@ -196,25 +196,28 @@ class ProjectsManager extends Generic {
         $project_registry['folders_structure'] = config( 'project_folders_structure', [] );
 
         // Create project folders structure.
-        $folders = $this->getProjectFolders( $data['slug'] );
+        $folders         = $this->getProjectFolders( $data['slug'] );
+        $folders_created = [];
         foreach ( $folders as $folder_relative_path ) {
             $folder_absolute_path = normalizePath( $project_root_path . '/' . $folder_relative_path );
             if ( ! is_dir( $folder_absolute_path ) ) {
                 if ( createDirectory( $folder_absolute_path ) ) {
-                    $log[] = '+ Project folder created: ' . $folder_absolute_path;
+                    $log[]             = '+ Project folder created: ' . $folder_absolute_path;
+                    $folders_created[] = $folder_relative_path;
                 } else {
                     $log_warnings[] = [
                         'code'    => 'project_folders_failed',
                         'message' => 'Failed to create folder: ' . $folder_absolute_path,
                     ];
-                    $log[]          = ' - Failed creating folder: ' . $folder_absolute_path;
+                    $log[] = ' - Failed creating folder: ' . $folder_absolute_path;
+                    $this->error->add( 'project_folders', 'Failed to create folder: ' . $folder_absolute_path );
                 }
             } else {
                 $log[] = ' - Skipped creating folder (already exists): ' . $folder_absolute_path;
             }
         }
 
-        $log[] = 'Project folders created/registered: ' . implode( ', ', $folders );
+        $log[] = 'Project folders created/registered: ' . implode( ', ', $folders_created );
 
         $www_root = ! empty( $folders['www'] ) ? normalizePath( $project_root_path . '/' . $folders['www'] ) : null;
 
@@ -227,10 +230,11 @@ class ProjectsManager extends Generic {
                 'message' => 'Virtual host file was not created.',
                 'details' => implode( ' ', $this->error->getErrorMessages( 'vhost' ) )
             ];
-            // Remove the error message from the error object, so it won't be shown in the frontend.'
-            $this->error->remove( 'vhost' );
+//            // Remove the error message from the error object, so it won't be shown in the frontend.'
+//            $this->error->remove( 'vhost' );
 
-            $log[] = ' - Failed to create Apache vhost file for the project. Please check the server logs for more details.';
+            $log[] = ' - Failed to create Apache vhost file for the project. '
+                     . implode( ' ', $this->error->getErrorMessages( 'vhost' ) );
         } else {
             $log[]                          = '+ Apache vhost file created: ' . $vhost_file;
             $project_registry['vhost_file'] = $vhost_file;

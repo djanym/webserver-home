@@ -55,8 +55,10 @@ class Generic {
             if ( is_string( $data ) ) {
                 $response['message'] = $data;
             } elseif ( is_array( $data ) ) {
-                $response['data'] = $data;
+                // Merge the data with the response.
+                $response = array_merge( $response, $data );
 
+                // If there is a message in the data, then override the default success message with it.
                 if ( ! empty( $data['message'] ) ) {
                     $response['message'] = $data['message'];
                 }
@@ -64,7 +66,7 @@ class Generic {
         }
 
         // Errors can happen even if action was successful.
-        //So we need to check if there are errors and add them to the response.
+        // So we need to check if there are errors and add them to the response.
         if ( $this->error->hasErrors() ) {
             // Create an array of error messages in format: error code => error message.
             foreach ( $this->error->getErrorCodes() as $code ) {

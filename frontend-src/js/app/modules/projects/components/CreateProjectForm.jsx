@@ -38,21 +38,47 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
         }]
     };
 
+    showNotification('test', 'success');
+    showNotification('test', 'warning');
+    showNotification('test', 'error');
+    showNotification('test', 'info');
+
     // What happens if backend returns success.
     const handleSuccess = (result = {}) => {
         const createdProject = result.project || null;
         // const issues = normalizeBackendIssues(result.errors || []);
-        const issues = result.errors || [];
-        const notificationType = issues.length > 0 ? 'warning' : 'success';
-        const notificationMessage = result.message
-            || 'Done';
+        // In case of success, error still can happen,
+        // and these errors are not fields related, so we need to show error notifications.
+        const errors = result.errors || [];
 
-        showNotification(notificationMessage, notificationType, {
-            autoHide: issues.length === 0,
-            autoHideDelay: issues.length === 0 ? 5000 : 0,
-            errors: issues
+        console.log('errors', errors);
+
+        // If there is a `message` field in the response. We should show it.
+        if (result.message && typeof result.message === 'string' && result.message.trim().length > 0) {
+            showNotification(
+                    result.message,
+                    errors.length > 0 ? 'warning' : 'success',
+            );
+        }
+
+        // Go through all issues and show them as notifications.
+        errors.forEach((error) => {
+            console.log('error', error);
+            const { code, message } = error;
+            const notificationMessage = `(${code}) ${message}`;
+            showNotification(notificationMessage, 'error');
         });
 
+        // If there is `log` records, then show them as one multi-line notification.
+        if (Array.isArray(result.log) && result.log.length > 0) {
+            const logMessages = result.log.map((logItem) => {
+                const { level, message } = logItem;
+                return `${level+1}: ${message}`;
+            });
+            showNotification(logMessages.join('<br/>\n'), 'info');
+        }
+
+        // If there was passed on project added callback.
         if (typeof onProjectAdded === 'function') {
             onProjectAdded(createdProject);
         }
