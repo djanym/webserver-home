@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="none" width="250" height="250">
+  <rect style="stroke-linecap: round; stroke-width: 30px; stroke: rgb(209, 213, 219); paint-order: stroke; fill: rgb(156, 163, 175);" x="15" y="15" width="220" height="220" rx="25" ry="25">
+    <title>Main Rectangle</title>
+  </rect>
+  <g transform="matrix(1, 0, 0, 1, -0.000004, -61.517532)">
+    <title>Panel 1</title>
+    <rect x="32.979" y="105" width="184.042" height="40" style="fill: rgb(107, 114, 128); stroke-linecap: round; stroke-linejoin: round; paint-order: fill; stroke-width: 0px;" rx="12" ry="12">
+      <title>Panel</title>
+    </rect>
+    <g>
+      <title>All Buttons Group</title>
+      <g>
+        <title>Buttons Group</title>
+        <ellipse style="fill: rgb(132, 204, 22);" cx="57" cy="125" rx="10" ry="10">
+          <title>Button 1</title>
+        </ellipse>
+        <ellipse style="stroke-width: 1; fill: rgb(223, 0, 82);" cx="87" cy="125" rx="10" ry="10">
+          <title>Button 2</title>
+        </ellipse>
+        <ellipse style="fill: rgb(132, 204, 22); stroke-width: 1;" cx="117" cy="125" rx="10" ry="10">
+          <title>Button 3</title>
+        </ellipse>
+      </g>
+      <rect x="148" y="115" width="55" height="20" style="fill: rgb(229, 231, 235);" rx="10" ry="10">
+        <title>Wide Button</title>
+      </rect>
+    </g>
+  </g>
+  <g>
+    <title>Panel 2</title>
+    <rect x="32.979" y="105" width="184.042" height="40" style="fill: rgb(107, 114, 128); stroke-linecap: round; stroke-linejoin: round; paint-order: fill; stroke-width: 0px;" rx="12" ry="12">
+      <title>Panel</title>
+    </rect>
+    <g>
+      <title>All Buttons Group</title>
+      <g>
+        <title>Buttons Group</title>
+        <ellipse style="fill: rgb(132, 204, 22);" cx="57" cy="125" rx="10" ry="10">
+          <title>Button 1</title>
+        </ellipse>
+        <ellipse style="stroke-width: 1; fill: rgb(223, 0, 82);" cx="87" cy="125" rx="10" ry="10">
+          <title>Button 2</title>
+        </ellipse>
+        <ellipse style="fill: rgb(132, 204, 22); stroke-width: 1;" cx="117" cy="125" rx="10" ry="10">
+          <title>Button 3</title>
+        </ellipse>
+      </g>
+      <rect x="148" y="115" width="55" height="20" style="fill: rgb(229, 231, 235);" rx="10" ry="10">
+        <title>Wide Button</title>
+      </rect>
+    </g>
+  </g>
+</svg>

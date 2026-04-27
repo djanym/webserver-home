@@ -5,7 +5,7 @@
 import React, { useState } from 'react';
 import { apiCreateProject } from '../projects-api';
 import { useAppConfig } from '../../../services/config-context';
-import { formFn, normalizeBackendIssues } from '../../../services/forms';
+import { formFn } from '../../../services/forms';
 import { slugify } from '../../../services/helpers';
 import ManagedForm from '../../../components/ManagedForm';
 import FormResponse from '../../../components/FormResponse';
@@ -37,11 +37,6 @@ const CreateProjectForm = ({ onProjectAdded, onCancel }) => {
             when: (allValues) => allValues.custom_path_enabled && allValues.path_type === 'absolute'
         }]
     };
-
-    showNotification('test', 'success');
-    showNotification('test', 'warning');
-    showNotification('test', 'error');
-    showNotification('test', 'info');
 
     // What happens if backend returns success.
     const handleSuccess = (result = {}) => {
