@@ -1,9 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="none" width="250" height="250">
-    <rect style="stroke-linecap: round; stroke-width: 30px; stroke: rgb(209, 213, 219); paint-order: stroke; fill: rgb(156, 163, 175);" x="15" y="15" width="220" height="220" rx="25" ry="25">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 250 250" fill="none" width="250" height="250" xmlns:bx="https://boxy-svg.com">
+    <defs>
+        <linearGradient id="led-color-off" gradientUnits="userSpaceOnUse" bx:pinned="true">
+            <title>led-color-off</title>
+            <stop style="stop-color: rgb(55, 55, 55)"/>
+        </linearGradient>
+        <linearGradient id="led-color-on" gradientUnits="userSpaceOnUse" bx:pinned="true">
+            <title>led-color-on</title>
+            <stop style="stop-color: rgb(132, 204, 22)"/>
+        </linearGradient>
+        <linearGradient id="led-color-active" gradientUnits="userSpaceOnUse" bx:pinned="true">
+            <title>led-color-active</title>
+            <stop style="stop-color: rgb(223, 0, 82)"/>
+        </linearGradient>
+        <linearGradient id="led-color-waiting" gradientUnits="userSpaceOnUse" bx:pinned="true">
+            <title>led-color-waiting</title>
+            <stop style="stop-color: rgb(216, 218, 0)"/>
+        </linearGradient>
+        <linearGradient id="led-color-powerup" gradientUnits="userSpaceOnUse" bx:pinned="true">
+            <title>led-color-powerup</title>
+            <stop style="stop-color: rgb(229, 231, 235)"/>
+        </linearGradient>
+        <linearGradient id="led-color-powerdown" gradientUnits="userSpaceOnUse" bx:pinned="true">
+            <title>led-color-powerdown</title>
+            <stop style="stop-color: rgb(222, 0, 0)"/>
+        </linearGradient>
+    </defs>
+    <rect style="stroke-linecap: round; paint-order: stroke; fill: rgb(156, 163, 175); stroke: rgb(53, 53, 53); stroke-width: 20px;" x="10" y="10" width="230" height="230" rx="25" ry="25">
         <title>Main Rectangle</title>
     </rect>
-    <g transform="matrix(1, 0, 0, 1, -0.000004, -61.517532)">
+    <g transform="matrix(1, 0, 0, 1, -0.000004, -72)">
         <title>Panel 1</title>
         <rect x="32.979" y="105" width="184.042" height="40" style="fill: rgb(107, 114, 128); stroke-linecap: round; stroke-linejoin: round; paint-order: fill; stroke-width: 0px;" rx="12" ry="12">
             <title>Panel</title>
@@ -12,22 +38,22 @@
             <title>All Buttons Group</title>
             <g>
                 <title>Buttons Group</title>
-                <ellipse style="fill: rgb(132, 204, 22);" cx="57" cy="125" rx="10" ry="10">
+                <ellipse style="fill: url(#led-color-on);" cx="57" cy="125" rx="10" ry="10">
                     <title>Button 1</title>
                 </ellipse>
-                <ellipse style="stroke-width: 1; fill: rgb(223, 0, 82);" cx="87" cy="125" rx="10" ry="10">
+                <ellipse style="stroke-width: 1; fill: url(#led-color-active);" cx="87" cy="125" rx="10" ry="10">
                     <title>Button 2</title>
                 </ellipse>
-                <ellipse style="fill: rgb(132, 204, 22); stroke-width: 1;" cx="117" cy="125" rx="10" ry="10">
+                <ellipse style="fill: url(#led-color-waiting); stroke-width: 1;" cx="117" cy="125" rx="10" ry="10">
                     <title>Button 3</title>
                 </ellipse>
             </g>
-            <rect x="148" y="115" width="55" height="20" style="fill: rgb(229, 231, 235);" rx="10" ry="10">
+            <rect x="148" y="115" width="55" height="20" style="fill: url(#led-color-powerup);" rx="10" ry="10">
                 <title>Wide Button</title>
             </rect>
         </g>
     </g>
-    <g>
+    <g transform="matrix(1, 0, 0, 1, 0, -12)">
         <title>Panel 2</title>
         <rect x="32.979" y="105" width="184.042" height="40" style="fill: rgb(107, 114, 128); stroke-linecap: round; stroke-linejoin: round; paint-order: fill; stroke-width: 0px;" rx="12" ry="12">
             <title>Panel</title>
@@ -36,18 +62,471 @@
             <title>All Buttons Group</title>
             <g>
                 <title>Buttons Group</title>
-                <ellipse style="fill: rgb(132, 204, 22);" cx="57" cy="125" rx="10" ry="10">
+                <ellipse style="fill: url(#led-color-on);" cx="57" cy="125" rx="10" ry="10">
                     <title>Button 1</title>
                 </ellipse>
-                <ellipse style="stroke-width: 1; fill: rgb(223, 0, 82);" cx="87" cy="125" rx="10" ry="10">
+                <ellipse style="stroke-width: 1; fill: url(#led-color-waiting);" cx="87" cy="125" rx="10" ry="10">
                     <title>Button 2</title>
                 </ellipse>
-                <ellipse style="fill: rgb(132, 204, 22); stroke-width: 1;" cx="117" cy="125" rx="10" ry="10">
+                <ellipse style="stroke-width: 1; fill: url(#led-color-on);" cx="117" cy="125" rx="10" ry="10">
                     <title>Button 3</title>
                 </ellipse>
             </g>
-            <rect x="148" y="115" width="55" height="20" style="fill: rgb(229, 231, 235);" rx="10" ry="10">
+            <rect x="148" y="115" width="55" height="20" style="fill: url(#led-color-powerdown);" rx="10" ry="10">
                 <title>Wide Button</title>
+            </rect>
+        </g>
+    </g>
+    <rect x="25" y="153" width="200" height="65" style="fill: rgb(107, 114, 128); stroke-linecap: round; stroke-linejoin: round; paint-order: fill; stroke-width: 0;" rx="12" ry="12">
+        <title>Panel Main</title>
+    </rect>
+    <g transform="matrix(1, 0, 0, 1, 0.000002, -4.615005)">
+        <title>Panel Main Leds</title>
+        <g>
+            <title>First Row</title>
+            <rect x="30" y="161.615" width="5" height="10" style="fill: url(#led-color-off);" rx="3" ry="3" id="led-1-1">
+                <title>led</title>
+            </rect>
+            <rect x="36.852" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-2">
+                <title>led</title>
+            </rect>
+            <rect x="43.704" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-3">
+                <title>led</title>
+            </rect>
+            <rect x="50.556" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-4">
+                <title>led</title>
+            </rect>
+            <rect x="57.408" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-5">
+                <title>led</title>
+            </rect>
+            <rect x="64.26" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-6">
+                <title>led</title>
+            </rect>
+            <rect x="71.112" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-7">
+                <title>led</title>
+            </rect>
+            <rect x="77.964" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-8">
+                <title>led</title>
+            </rect>
+            <rect x="84.816" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-9">
+                <title>led</title>
+            </rect>
+            <rect x="91.668" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-10">
+                <title>led</title>
+            </rect>
+            <rect x="98.52" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-11">
+                <title>led</title>
+            </rect>
+            <rect x="105.372" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-12">
+                <title>led</title>
+            </rect>
+            <rect x="112.224" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-13">
+                <title>led</title>
+            </rect>
+            <rect x="119.076" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-14">
+                <title>led</title>
+            </rect>
+            <rect x="125.928" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-15">
+                <title>led</title>
+            </rect>
+            <rect x="132.78" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-16">
+                <title>led</title>
+            </rect>
+            <rect x="139.632" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-17">
+                <title>led</title>
+            </rect>
+            <rect x="146.484" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-18">
+                <title>led</title>
+            </rect>
+            <rect x="153.336" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-19">
+                <title>led</title>
+            </rect>
+            <rect x="160.188" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-20">
+                <title>led</title>
+            </rect>
+            <rect x="167.04" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-21">
+                <title>led</title>
+            </rect>
+            <rect x="173.892" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-22">
+                <title>led</title>
+            </rect>
+            <rect x="180.744" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-23">
+                <title>led</title>
+            </rect>
+            <rect x="187.596" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-24">
+                <title>led</title>
+            </rect>
+            <rect x="194.448" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-25">
+                <title>led</title>
+            </rect>
+            <rect x="201.3" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-26">
+                <title>led</title>
+            </rect>
+            <rect x="208.152" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-27">
+                <title>led</title>
+            </rect>
+            <rect x="215" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="led-1-28">
+                <title>led</title>
+            </rect>
+        </g>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 0.000002, 7.384995)">
+        <title>Panel Main Leds</title>
+        <g>
+            <title>First Row</title>
+            <rect x="30" y="161.615" width="5" height="10" style="fill: url(#led-color-off);" rx="3" ry="3" id="rect-1">
+                <title>led</title>
+            </rect>
+            <rect x="36.852" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-2">
+                <title>led</title>
+            </rect>
+            <rect x="43.704" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-3">
+                <title>led</title>
+            </rect>
+            <rect x="50.556" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-4">
+                <title>led</title>
+            </rect>
+            <rect x="57.408" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-5">
+                <title>led</title>
+            </rect>
+            <rect x="64.26" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-6">
+                <title>led</title>
+            </rect>
+            <rect x="71.112" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-7">
+                <title>led</title>
+            </rect>
+            <rect x="77.964" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-8">
+                <title>led</title>
+            </rect>
+            <rect x="84.816" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-9">
+                <title>led</title>
+            </rect>
+            <rect x="91.668" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-10">
+                <title>led</title>
+            </rect>
+            <rect x="98.52" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-11">
+                <title>led</title>
+            </rect>
+            <rect x="105.372" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-12">
+                <title>led</title>
+            </rect>
+            <rect x="112.224" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-13">
+                <title>led</title>
+            </rect>
+            <rect x="119.076" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-14">
+                <title>led</title>
+            </rect>
+            <rect x="125.928" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-15">
+                <title>led</title>
+            </rect>
+            <rect x="132.78" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-16">
+                <title>led</title>
+            </rect>
+            <rect x="139.632" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-17">
+                <title>led</title>
+            </rect>
+            <rect x="146.484" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-18">
+                <title>led</title>
+            </rect>
+            <rect x="153.336" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-19">
+                <title>led</title>
+            </rect>
+            <rect x="160.188" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-20">
+                <title>led</title>
+            </rect>
+            <rect x="167.04" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-21">
+                <title>led</title>
+            </rect>
+            <rect x="173.892" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-22">
+                <title>led</title>
+            </rect>
+            <rect x="180.744" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-23">
+                <title>led</title>
+            </rect>
+            <rect x="187.596" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-24">
+                <title>led</title>
+            </rect>
+            <rect x="194.448" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-25">
+                <title>led</title>
+            </rect>
+            <rect x="201.3" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-26">
+                <title>led</title>
+            </rect>
+            <rect x="208.152" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-27">
+                <title>led</title>
+            </rect>
+            <rect x="215" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-28">
+                <title>led</title>
+            </rect>
+        </g>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 0.000002, 19.384995)">
+        <title>Panel Main Leds</title>
+        <g>
+            <title>First Row</title>
+            <rect x="30" y="161.615" width="5" height="10" style="fill: url(#led-color-off);" rx="3" ry="3" id="rect-29">
+                <title>led</title>
+            </rect>
+            <rect x="36.852" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-30">
+                <title>led</title>
+            </rect>
+            <rect x="43.704" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-31">
+                <title>led</title>
+            </rect>
+            <rect x="50.556" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-32">
+                <title>led</title>
+            </rect>
+            <rect x="57.408" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-33">
+                <title>led</title>
+            </rect>
+            <rect x="64.26" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-34">
+                <title>led</title>
+            </rect>
+            <rect x="71.112" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-35">
+                <title>led</title>
+            </rect>
+            <rect x="77.964" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-36">
+                <title>led</title>
+            </rect>
+            <rect x="84.816" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-37">
+                <title>led</title>
+            </rect>
+            <rect x="91.668" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-38">
+                <title>led</title>
+            </rect>
+            <rect x="98.52" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-39">
+                <title>led</title>
+            </rect>
+            <rect x="105.372" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-40">
+                <title>led</title>
+            </rect>
+            <rect x="112.224" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-41">
+                <title>led</title>
+            </rect>
+            <rect x="119.076" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-42">
+                <title>led</title>
+            </rect>
+            <rect x="125.928" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-43">
+                <title>led</title>
+            </rect>
+            <rect x="132.78" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-44">
+                <title>led</title>
+            </rect>
+            <rect x="139.632" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-45">
+                <title>led</title>
+            </rect>
+            <rect x="146.484" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-46">
+                <title>led</title>
+            </rect>
+            <rect x="153.336" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-47">
+                <title>led</title>
+            </rect>
+            <rect x="160.188" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-48">
+                <title>led</title>
+            </rect>
+            <rect x="167.04" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-49">
+                <title>led</title>
+            </rect>
+            <rect x="173.892" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-50">
+                <title>led</title>
+            </rect>
+            <rect x="180.744" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-51">
+                <title>led</title>
+            </rect>
+            <rect x="187.596" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-52">
+                <title>led</title>
+            </rect>
+            <rect x="194.448" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-53">
+                <title>led</title>
+            </rect>
+            <rect x="201.3" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-54">
+                <title>led</title>
+            </rect>
+            <rect x="208.152" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-55">
+                <title>led</title>
+            </rect>
+            <rect x="215" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-56">
+                <title>led</title>
+            </rect>
+        </g>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 0.000002, 31.384995)">
+        <title>Panel Main Leds</title>
+        <g>
+            <title>First Row</title>
+            <rect x="30" y="161.615" width="5" height="10" style="fill: url(#led-color-off);" rx="3" ry="3" id="rect-57">
+                <title>led</title>
+            </rect>
+            <rect x="36.852" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-58">
+                <title>led</title>
+            </rect>
+            <rect x="43.704" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-59">
+                <title>led</title>
+            </rect>
+            <rect x="50.556" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-60">
+                <title>led</title>
+            </rect>
+            <rect x="57.408" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-61">
+                <title>led</title>
+            </rect>
+            <rect x="64.26" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-62">
+                <title>led</title>
+            </rect>
+            <rect x="71.112" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-63">
+                <title>led</title>
+            </rect>
+            <rect x="77.964" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-64">
+                <title>led</title>
+            </rect>
+            <rect x="84.816" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-65">
+                <title>led</title>
+            </rect>
+            <rect x="91.668" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-66">
+                <title>led</title>
+            </rect>
+            <rect x="98.52" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-67">
+                <title>led</title>
+            </rect>
+            <rect x="105.372" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-68">
+                <title>led</title>
+            </rect>
+            <rect x="112.224" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-69">
+                <title>led</title>
+            </rect>
+            <rect x="119.076" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-70">
+                <title>led</title>
+            </rect>
+            <rect x="125.928" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-71">
+                <title>led</title>
+            </rect>
+            <rect x="132.78" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-72">
+                <title>led</title>
+            </rect>
+            <rect x="139.632" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-73">
+                <title>led</title>
+            </rect>
+            <rect x="146.484" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-74">
+                <title>led</title>
+            </rect>
+            <rect x="153.336" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-75">
+                <title>led</title>
+            </rect>
+            <rect x="160.188" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-76">
+                <title>led</title>
+            </rect>
+            <rect x="167.04" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-77">
+                <title>led</title>
+            </rect>
+            <rect x="173.892" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-78">
+                <title>led</title>
+            </rect>
+            <rect x="180.744" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-79">
+                <title>led</title>
+            </rect>
+            <rect x="187.596" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-80">
+                <title>led</title>
+            </rect>
+            <rect x="194.448" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-81">
+                <title>led</title>
+            </rect>
+            <rect x="201.3" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-82">
+                <title>led</title>
+            </rect>
+            <rect x="208.152" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-83">
+                <title>led</title>
+            </rect>
+            <rect x="215" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-84">
+                <title>led</title>
+            </rect>
+        </g>
+    </g>
+    <g transform="matrix(1, 0, 0, 1, 0.000002, 43.384995)">
+        <title>Panel Main Leds</title>
+        <g>
+            <title>First Row</title>
+            <rect x="30" y="161.615" width="5" height="10" style="fill: url(#led-color-off);" rx="3" ry="3" id="rect-85">
+                <title>led</title>
+            </rect>
+            <rect x="36.852" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-86">
+                <title>led</title>
+            </rect>
+            <rect x="43.704" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-87">
+                <title>led</title>
+            </rect>
+            <rect x="50.556" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-88">
+                <title>led</title>
+            </rect>
+            <rect x="57.408" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-89">
+                <title>led</title>
+            </rect>
+            <rect x="64.26" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-90">
+                <title>led</title>
+            </rect>
+            <rect x="71.112" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-91">
+                <title>led</title>
+            </rect>
+            <rect x="77.964" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-92">
+                <title>led</title>
+            </rect>
+            <rect x="84.816" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-93">
+                <title>led</title>
+            </rect>
+            <rect x="91.668" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-94">
+                <title>led</title>
+            </rect>
+            <rect x="98.52" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-95">
+                <title>led</title>
+            </rect>
+            <rect x="105.372" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-96">
+                <title>led</title>
+            </rect>
+            <rect x="112.224" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-97">
+                <title>led</title>
+            </rect>
+            <rect x="119.076" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-98">
+                <title>led</title>
+            </rect>
+            <rect x="125.928" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-99">
+                <title>led</title>
+            </rect>
+            <rect x="132.78" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-100">
+                <title>led</title>
+            </rect>
+            <rect x="139.632" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-101">
+                <title>led</title>
+            </rect>
+            <rect x="146.484" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-102">
+                <title>led</title>
+            </rect>
+            <rect x="153.336" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-103">
+                <title>led</title>
+            </rect>
+            <rect x="160.188" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-104">
+                <title>led</title>
+            </rect>
+            <rect x="167.04" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-105">
+                <title>led</title>
+            </rect>
+            <rect x="173.892" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-106">
+                <title>led</title>
+            </rect>
+            <rect x="180.744" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-107">
+                <title>led</title>
+            </rect>
+            <rect x="187.596" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-108">
+                <title>led</title>
+            </rect>
+            <rect x="194.448" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-109">
+                <title>led</title>
+            </rect>
+            <rect x="201.3" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-110">
+                <title>led</title>
+            </rect>
+            <rect x="208.152" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-111">
+                <title>led</title>
+            </rect>
+            <rect x="215" y="161.615" width="5" height="10" style="fill: url(#led-color-off); stroke-width: 1;" rx="3" ry="3" id="rect-112">
+                <title>led</title>
             </rect>
         </g>
     </g>
