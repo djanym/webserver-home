@@ -5,6 +5,7 @@
 
 import React from 'react';
 import NotificationsHost from './NotificationsHost';
+import logo from '../../../images/logo.svg';
 
 const AppShell = ({ title, headerAction, children }) => {
     return (
@@ -14,6 +15,9 @@ const AppShell = ({ title, headerAction, children }) => {
             <header className="app-header">
                 <div className="container">
                     <div className="header-left">
+                        <div className="app-logo-container">
+                            <img src={logo} alt="Webserver Home Manager Logo" />
+                        </div>
                         <h1 className="app-title">{title}</h1>
                         <div className="search-placeholder">
                             <input type="text" placeholder="Search projects..." disabled />
