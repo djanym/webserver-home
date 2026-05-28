@@ -2,7 +2,7 @@
 
 return static function( AltoRouter $router ) : void {
     $router->addMatchTypes([
-        'project_slug' => '(?!add$)[0-9A-Za-z]++'
+        'project_slug' => '(?!add$)[0-9A-Za-z]++',
     ]);
 
     $router->map(
@@ -26,6 +26,8 @@ return static function( AltoRouter $router ) : void {
         static fn( string $id ) => pmUpdateProject( $id )
     );
     $router->map(
-        'DELETE', '/projects/[a:id]', static fn( string $id ) => pmDeleteProject( $id )
+        'DELETE',
+        '/projects/[a:id]',
+        static fn( string $id ) => pmDeleteProject( $id )
     );
 };

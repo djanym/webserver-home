@@ -1,16 +1,23 @@
 {
-  "require": {
-    "altorouter/altorouter": "^2.0",
-    "ext-mbstring": "*"
-  },
-  "require-dev": {
-    "roave/security-advisories": "dev-latest"
-  },
-  "autoload": {
-    "psr-4": {
-      "WebserverHome\\": "inc/"
-    }
-  },
-  "minimum-stability": "dev",
-  "prefer-stable": true
+    "repositories": [
+        {
+            "type": "path",
+            "url": "vendor/djanym/validatorbei"
+        }
+    ],
+    "require": {
+        "altorouter/altorouter": "^2.0",
+        "ext-mbstring": "*",
+        "djanym/validatorbei": "dev-main"
+    },
+    "require-dev": {
+        "roave/security-advisories": "dev-latest"
+    },
+    "autoload": {
+        "psr-4": {
+            "WebserverHome\\": "inc/"
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
 }
