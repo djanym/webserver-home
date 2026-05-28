@@ -2,6 +2,7 @@
 
 namespace WebserverHome;
 
+use Ricubai\Validatorbei\Validatorbei;
 use RuntimeException;
 
 /**
@@ -10,7 +11,7 @@ use RuntimeException;
  * - Owns per-request error container (`AppError`) and additional response payload.
  * - Provides JSON emitters: `sendJsonResponse()` for success path, `sendErrorResponse()` for failure path.
  * - Provides validation wrappers: `filterValidateAll()` (field filtering + recursive subset validation)
- *   and `validateField()` (delegates rule execution to `Validator::validate()`).
+ *   and `validateField()` (delegates rule execution to `Validatorbei::validate()`).
  * Agent usage:
  * - Extend/reuse this class for handlers/services that validate input and return API responses.
  * - Do not duplicate response/error plumbing in module classes.
@@ -205,10 +206,10 @@ class Generic {
      * @param array  $context         Optional. Extra context for rule evaluation.
      *
      * @return bool True if the field is valid, false otherwise. Also, adds the error message to the error object.
-     * @uses Validator::validate()
+     * @uses Validatorbei::validate()
      */
     public function validateField( mixed $value, array $rules, string $error_field_key, array $context = [] ) : bool {
-        $validation_result = Validator::validate( $value, $rules, $context );
+        $validation_result = Validatorbei::validate( $value, $rules, $context );
         if ( $validation_result !== true ) {
             $this->error->add( $error_field_key, $validation_result );
 
@@ -277,16 +278,7 @@ class Generic {
      *
      * @return bool True if the file is deleted, false otherwise.
      */
-    public function deleteFile( string $file_path ) : bool {
-        $absolute_path = SUBSITE_UPLOAD_DIR . '/' . $file_path;
-        if ( ! file_exists( $absolute_path ) ) {
-            return false;
-        }
-
-        wp_delete_file( SUBSITE_UPLOAD_DIR . '/' . $file_path );
-
-        return true;
-    }
+    public function deleteFile( string $file_path ) : bool {}
 
     /**
      * Getter for the static properties.

@@ -1,8 +1,20 @@
+'db-dump-file-format'
+i want ot create DB-dump functionality. But for now, only part of it.
+#1. I want you to create a placeholder class in the backend and the required routes.
+#2. The class will have only the main structure, without actually creating the database functionality. Only placeholders. So backend only placeholders.
+#3. On the front end, add a "Create DB dump" icon and functionality, including an API request, success/failure message, info, etc.
+#4. The button should be an icon under the "..." menu for each project in the listing.
+#5. The 3 dots menu should be a dropdown. There should be a "Create DB dump" button.
+#6. List of create db dumps should be stored in project.registry.json. Each record should contain the file name, when created, size of the file.
+#7. Add a download dump button.
+#8. DB dump file name should use 'db-dump-file-format' in app config.
+#9. The file should be stored in the db-dump folder based on the config.
+
 ------------------
 
 These features may be implemented later:
 •	Project export
-•	Project backup
+
 •	Project duplication
 •	SSL (local certificates)
 •	Nginx support
@@ -10,28 +22,35 @@ These features may be implemented later:
 •	Git integration
 •	Project templates
 
-
 -------------
 
 
----
-
+i want to create import existing project functionality. But for now, only part of it.
+Because projects are portable, that means that I can send a project to another machine and add it there.
+So no need to create it.
 # Import Logic
+1. Select the project registry file.
+2. Registers project. With updated paths. Because the project can be placed anywhere. So when imports and registers in the main registry file, it should update the path in the main registry file and in the project.
 
-Import steps:
-
-1. Copy project folder to server root
-2. Select project registry file.
-3. Registers project.
+#1. Add "Add Existing Project" alongside the "Add Project".
+#2. In the backend, create a separate class file for importing functionality. It should be in the projects-manager module. Create the main structure of the class and functions. But no need for functionality, only function placeholders.
+#3. Add required routes.
+#4. In the frontend, add the required button and requests, and response message, and info, etc.
+#5. In the backend, create only placeholders.
 
 Rules:
-
-- Import must not modify project
+- Import must not modify the project or its files.
 - Project remains portable
+
 
 -----------------------
 
+i want to update the Validator.php functionality. It was moved to the composer "djanym/validatorbei" package.
+#1. Check package "backend/vendor/djanym/validatorbei" which is laready was added via composer.
+#2. Check the current Validator.php and if Validator is missing something from it, then add/update.
+#3. Update this current project code to use Validatorbei instead.
 
+-----------------------
 
 Project Interaction Behavior
 

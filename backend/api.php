@@ -8,7 +8,6 @@ include ABSPATH . '/vendor/autoload.php';
 include ABSPATH . '/inc/functions.php';
 load_config();
 handle_cors();
-include ABSPATH . '/inc/Validator.php';
 include ABSPATH . '/inc/Generic.php';
 include ABSPATH . '/inc/AppError.php';
 include ABSPATH . '/inc/AppShared.php';
