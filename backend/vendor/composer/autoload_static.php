@@ -6,17 +6,29 @@ namespace Composer\Autoload;
 
 class ComposerStaticInitfcd3779589c97535ec2d946928c603de
 {
+    public static $files = array (
+        '583c78e3a0f41513d9a9e3dfc44000d6' => __DIR__ . '/..' . '/djanym/validatorbei/packages/functions.php',
+    );
+
     public static $prefixLengthsPsr4 = array (
-        'W' => 
+        'W' =>
         array (
             'WebserverHome\\' => 14,
+        ),
+        'R' =>
+        array (
+            'Ricubai\\Validatorbei\\' => 21,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'WebserverHome\\' => 
+        'WebserverHome\\' =>
         array (
             0 => __DIR__ . '/../..' . '/inc',
+        ),
+        'Ricubai\\Validatorbei\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/djanym/validatorbei/packages',
         ),
     );
 

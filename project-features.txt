@@ -1,6 +1,6 @@
 PROJECT_FEATURES_INDEX
 version: v2
-updated_at: 2026-04-19
+updated_at: 2026-05-28
 scope: Features only (behavior, flows, and involved files/functions).
 
 READ_ORDER_FOR_AI
@@ -14,6 +14,7 @@ QUICK_INDEX
 - FE-PROJECTS-LIST: Fetch and render project list.
 - FE-PROJECTS-CREATE: Create project form + submit lifecycle.
 - FE-PROJECT-CARD: Project status/details/issues UI.
+- FE-PROJECT-DB-DUMPS: Project row DB dump dropdown, create/download actions, and registry display.
 - FE-NOTIFICATIONS: Global notification bubbles.
 - FE-FORMS-ENGINE: Shared client-side validation and backend error mapping.
 - FE-API-ENGINE: Shared fetch wrapper and backend config bootstrap.
@@ -81,13 +82,32 @@ FEATURE_CATALOG
   - frontend-src/js/app/components/ManagedForm.jsx
 
 [FE-PROJECT-CARD] Project status and issue rendering
-- behavior: Renders card with expandable details; normalizes mixed issue payloads for display.
+- behavior: Renders card with expandable details; normalizes mixed issue payloads for display; includes per-project actions dropdown and DB dump registry display.
 - key_logic:
   - ProjectCard.jsx::normalizeIssueList() handles string/object/mixed issue items.
   - ProjectCard.jsx::statusClass maps status to UI classes.
   - ProjectCard.jsx::toggleExpand() drives details and issue section visibility.
+  - ProjectCard.jsx::handleCreateDbDump() calls create endpoint, shows notifications, and updates local DB dump list.
+  - ProjectCard.jsx::handleDownloadDbDump() downloads blob response and saves the dump file.
 - files:
   - frontend-src/js/app/modules/projects/components/ProjectCard.jsx
+
+[FE-PROJECT-DB-DUMPS] DB dump feature
+- behavior: Creates placeholder DB dump files, stores registry records, lists available dumps, and supports download from project row dropdown and details section.
+- key_logic:
+  - projects-api.js::apiCreateProjectDbDump(), apiFetchProjectDbDumps(), apiDownloadProjectDbDump().
+  - api.js::apiRequest() supports blob responseType for file downloads.
+  - ProjectCard.jsx renders the "..." dropdown with "Create DB dump" and download actions.
+  - backend/modules/db-dump-manager/DbDumpManager.php creates placeholder files, records file_name/created_at/size in project.registry.json, and streams downloads.
+  - backend/modules/db-dump-manager/routes.php + handlers.php expose create/list/download endpoints.
+- files:
+  - frontend-src/js/app/modules/projects/projects-api.js
+  - frontend-src/js/app/services/api.js
+  - frontend-src/js/app/modules/projects/components/ProjectCard.jsx
+  - backend/modules/db-dump-manager/DbDumpManager.php
+  - backend/modules/db-dump-manager/routes.php
+  - backend/modules/db-dump-manager/handlers.php
+  - backend/modules/db-dump-manager/db-dump-manager.php
 
 [FE-NOTIFICATIONS] Notification bubbles
 - behavior: Global pub-sub store with auto-hide timers; rendered by top-level host.
@@ -170,15 +190,19 @@ FEATURE_CATALOG
   - backend/inc/Generic.php
   - backend/inc/functions.php
 
-[BE-APACHE-MODULE] Apache utility endpoints
-- behavior: API endpoints to restart Apache and validate Apache config.
+[BE-DB-DUMP-MODULE] DB dump placeholder module
+- behavior: Provides placeholder DB dump creation, registry updates, list retrieval, and file download endpoints per project.
 - key_logic:
-  - handlers.php::wb_apache_base_restart_apache()
-  - handlers.php::wb_apache_base_validate_config()
+  - DbDumpManager.php::createDbDump() builds file name from app config, writes placeholder content, updates project.registry.json, and returns created dump metadata.
+  - DbDumpManager.php::getProjectDbDumps() returns registry dump list.
+  - DbDumpManager.php::downloadDbDump() validates requested record and streams file contents.
+  - db-dump-manager/routes.php maps /projects/[project_slug:id]/db-dump routes.
+  - handlers.php emits JSON success/error responses for create/list and streams downloads.
 - files:
-  - backend/modules/apache-base/routes.php
-  - backend/modules/apache-base/handlers.php
-  - backend/inc/ApacheManager.php
+  - backend/modules/db-dump-manager/DbDumpManager.php
+  - backend/modules/db-dump-manager/routes.php
+  - backend/modules/db-dump-manager/handlers.php
+  - backend/modules/db-dump-manager/db-dump-manager.php
 
 API_ROUTE_INVENTORY
 - GET /
@@ -188,8 +212,9 @@ API_ROUTE_INVENTORY
 - GET /projects/[project_slug:id]
 - PUT /projects/[a:id]
 - DELETE /projects/[a:id]
-- POST /apache/restart
-- POST /apache/validate
+- GET /projects/[project_slug:id]/db-dump
+- POST /projects/[project_slug:id]/db-dump/create
+- GET /projects/[project_slug:id]/db-dump/[db_dump_file:file_name]/download
 
 BACKEND_RESPONSE_SHAPES
 - Success common: { success: true, data?: object, message?: string, errors?: object, ...additional }
@@ -205,20 +230,14 @@ KNOWN_LOGIC_GAPS_FOR_AI
   - notifications.js::showNotification(message, type, autoHideDelay, options).
   - CreateProjectForm calls showNotification(message, type, { ...options }) with options object as third argument.
   - Impact: auto-hide timing/options can behave unexpectedly.
-- KG-003 forms service import drift in CreateProjectForm:
-  - CreateProjectForm imports normalizeBackendIssues from forms.js, but normalized export is currently not active.
-  - Impact: build/runtime import issues depending on bundler strictness.
+- KG-004 DB dump placeholder flow:
+  - Current DB dump module writes placeholder file content only; it does not connect to a database export engine yet.
+  - Impact: feature is staged and safe for UI/integration testing.
 
 FILE_FUNCTION_INDEX
+- frontend-src/js/app/modules/projects/components/ProjectCard.jsx: normalizeIssueList, toggleExpand, handleCreateDbDump, handleDownloadDbDump
+- frontend-src/js/app/modules/projects/projects-api.js: apiFetchProjects, apiCreateProject, apiUpdateProject, apiDeleteProject, apiFetchProjectDbDumps, apiCreateProjectDbDump, apiDownloadProjectDbDump
 - frontend-src/js/app/services/api.js: initApiConfig, apiRequest, apiFetchBackendConfig
-- frontend-src/js/app/modules/projects/projects-api.js: apiFetchProjects, apiCreateProject, apiUpdateProject, apiDeleteProject
-- frontend-src/js/app/services/forms.js: formFn, formSubmitFn, validateFields, splitBackendErrors
-- frontend-src/js/app/services/notifications.js: showNotification, subscribeNotifications, closeNotification
-- frontend-src/js/app/modules/projects/components/CreateProjectForm.jsx: handleSuccess, onSubmit payload normalization
-- frontend-src/js/app/modules/projects/components/ProjectCard.jsx: normalizeIssueList, toggleExpand
-- backend/routes.php: module route auto-discovery and dispatch
-- backend/modules/projects-manager/handlers.php: pmGetAllProjects, pmGetProject, CreateProjectCb
-- backend/modules/projects-manager/ProjectsManager.php: tryCreateProject, createProject, filterValidateSpecific, getAllProjects
-- backend/inc/Generic.php: filterValidateAll, validateField, sendJsonResponse, sendErrorResponse
-- backend/inc/Validator.php: validate and rule_* validators
-- backend/inc/AppError.php: add/get/merge error container
+- backend/modules/db-dump-manager/DbDumpManager.php: createDbDump, getProjectDbDumps, downloadDbDump
+- backend/modules/db-dump-manager/handlers.php: pmCreateDbDump, pmGetDbDumps, pmDownloadDbDump
+- backend/modules/db-dump-manager/routes.php: module route registration

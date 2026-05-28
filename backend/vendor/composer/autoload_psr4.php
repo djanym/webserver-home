@@ -7,4 +7,5 @@ $baseDir = dirname($vendorDir);
 
 return array(
     'WebserverHome\\' => array($baseDir . '/inc'),
+    'Ricubai\\Validatorbei\\' => array($vendorDir . '/djanym/validatorbei/packages'),
 );

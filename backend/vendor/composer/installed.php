@@ -3,7 +3,7 @@
         'name' => '__root__',
         'pretty_version' => 'dev-master',
         'version' => 'dev-master',
-        'reference' => '4d35565c305a8893c47f4f5c267b2e74b5447a1e',
+        'reference' => '63d9b46f8b9079b29408b29eba8ee76feb24fab2',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -13,7 +13,7 @@
         '__root__' => array(
             'pretty_version' => 'dev-master',
             'version' => 'dev-master',
-            'reference' => '4d35565c305a8893c47f4f5c267b2e74b5447a1e',
+            'reference' => '63d9b46f8b9079b29408b29eba8ee76feb24fab2',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -28,10 +28,19 @@
             'aliases' => array(),
             'dev_requirement' => false,
         ),
+        'djanym/validatorbei' => array(
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => 'ec687465bed4f04200b76233f5c703abfb3d5c13',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../djanym/validatorbei',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
         'roave/security-advisories' => array(
             'pretty_version' => 'dev-latest',
             'version' => 'dev-latest',
-            'reference' => 'e3520a4c9a252831ae009f8bf79a8d2a32ba4936',
+            'reference' => 'd6992473ee5e901c44ba7e8c82b3445692d04794',
             'type' => 'metapackage',
             'install_path' => null,
             'aliases' => array(
