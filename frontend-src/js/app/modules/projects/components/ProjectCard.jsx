@@ -1,8 +1,6 @@
-/**
- * Project card component.
- */
-
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { apiCreateProjectDbDump, apiDownloadProjectDbDump, apiFetchProjectDbDumps } from '../projects-api';
+import { showNotification } from '../../../services/notifications';
 
 const OpenIcon = () => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -33,11 +31,19 @@ const MoreIcon = () => (
     </svg>
 );
 
-const WarningIcon = () => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3l-8.47-14.14a2 2 0 0 0-3.42 0z"></path>
-        <line x1="12" y1="9" x2="12" y2="13"></line>
-        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+const DownloadIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+        <polyline points="7 10 12 15 17 10"></polyline>
+        <line x1="12" y1="15" x2="12" y2="3"></line>
+    </svg>
+);
+
+const DbDumpIcon = () => (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <ellipse cx="12" cy="5" rx="7" ry="3"></ellipse>
+        <path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5"></path>
+        <path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6"></path>
     </svg>
 );
 
@@ -67,7 +73,6 @@ const normalizeIssueList = (issues) => {
             }
 
             const message = String(issue.message || issue.error || issue.text || '').trim();
-
             if (!message) {
                 return null;
             }
@@ -84,7 +89,23 @@ const normalizeIssueList = (issues) => {
 
 const getIssueSummary = (count, label) => `${count} ${label}${count === 1 ? '' : 's'}`;
 
-const ProjectCard = ({ project }) => {
+const formatFileSize = (size) => {
+    if (!Number.isFinite(size)) {
+        return '';
+    }
+
+    if (size >= 1024 * 1024) {
+        return `${(size / (1024 * 1024)).toFixed(2)} MB`;
+    }
+
+    if (size >= 1024) {
+        return `${(size / 1024).toFixed(2)} KB`;
+    }
+
+    return `${size} B`;
+};
+
+const ProjectCard = ({ project, onProjectUpdated }) => {
     const {
         title,
         domain,
@@ -96,8 +117,14 @@ const ProjectCard = ({ project }) => {
         created_at,
         updated_at,
         errors,
+        db_dumps,
     } = project;
     const [isExpanded, setIsExpanded] = useState(false);
+    const [isActionsOpen, setIsActionsOpen] = useState(false);
+    const [isDbDumpBusy, setIsDbDumpBusy] = useState(false);
+    const [dbDumps, setDbDumps] = useState(Array.isArray(db_dumps) ? db_dumps : []);
+    const actionsMenuRef = useRef(null);
+
     const normalizedErrors = normalizeIssueList(errors);
     const hasIssues = normalizedErrors.length > 0;
     const resolvedStatus = status;
@@ -105,8 +132,109 @@ const ProjectCard = ({ project }) => {
         ? 'status-active'
         : (resolvedStatus === 'error' ? 'status-error' : (resolvedStatus === 'warning' ? 'status-warning' : 'status-inactive'));
     const projectKey = project.slug;
+    const projectDbDumps = Array.isArray(dbDumps) ? dbDumps : [];
 
-    const toggleExpand = () => setIsExpanded(!isExpanded);
+    useEffect(() => {
+        const handleOutsideClick = (event) => {
+            if (!actionsMenuRef.current) {
+                return;
+            }
+
+            if (!actionsMenuRef.current.contains(event.target)) {
+                setIsActionsOpen(false);
+            }
+        };
+
+        document.addEventListener('mousedown', handleOutsideClick);
+
+        return () => {
+            document.removeEventListener('mousedown', handleOutsideClick);
+        };
+    }, []);
+
+    useEffect(() => {
+        let isMounted = true;
+
+        const loadDbDumps = async () => {
+            try {
+                const result = await apiFetchProjectDbDumps(projectKey);
+                if (isMounted && result && Array.isArray(result.db_dumps)) {
+                    setDbDumps(result.db_dumps);
+                    return;
+                }
+            } catch (error) {
+                if (isMounted) {
+                    setDbDumps(Array.isArray(db_dumps) ? db_dumps : []);
+                }
+                return;
+            }
+
+            if (isMounted) {
+                setDbDumps(Array.isArray(db_dumps) ? db_dumps : []);
+            }
+        };
+
+        loadDbDumps();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [db_dumps, projectKey]);
+
+    const toggleExpand = () => setIsExpanded((prev) => !prev);
+    const toggleActionsMenu = () => setIsActionsOpen((prev) => !prev);
+
+    const handleCreateDbDump = async () => {
+        setIsDbDumpBusy(true);
+        setIsActionsOpen(false);
+
+        try {
+            const result = await apiCreateProjectDbDump(projectKey);
+            const createdProject = result.project || null;
+            const createdDump = result.dump || null;
+
+            if (createdProject && typeof onProjectUpdated === 'function') {
+                onProjectUpdated(createdProject);
+            }
+
+            if (createdDump) {
+                setDbDumps((prev) => [createdDump, ...prev]);
+            }
+
+            showNotification(result.message || 'DB dump placeholder created successfully.', 'success');
+        } catch (error) {
+            const message = error?.payload?.message || error?.message || 'Failed to create DB dump placeholder.';
+            showNotification(message, 'error');
+        } finally {
+            setIsDbDumpBusy(false);
+        }
+    };
+
+    const handleDownloadDbDump = async (fileName) => {
+        if (!fileName) {
+            return;
+        }
+
+        setIsActionsOpen(false);
+
+        try {
+            const fileBlob = await apiDownloadProjectDbDump(projectKey, fileName);
+            const downloadUrl = URL.createObjectURL(fileBlob);
+            const link = document.createElement('a');
+
+            link.href = downloadUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            URL.revokeObjectURL(downloadUrl);
+
+            showNotification(`DB dump downloaded: ${fileName}`, 'success');
+        } catch (error) {
+            const message = error?.payload?.message || error?.message || 'Failed to download DB dump.';
+            showNotification(message, 'error');
+        }
+    };
 
     return (
         <div className={`project-row ${isExpanded ? 'expanded' : ''} ${hasIssues ? 'has-issues' : ''}`} data-project-id={projectKey}>
@@ -136,15 +264,49 @@ const ProjectCard = ({ project }) => {
                     <a href={`https://${domain}`} target="_blank" rel="noopener noreferrer" className="action-icon-btn" title="Open URL">
                         <OpenIcon />
                     </a>
-                    <button className="action-icon-btn" title="Browse Files">
+                    <button type="button" className="action-icon-btn" title="Browse Files">
                         <BrowseIcon />
                     </button>
-                    <button className="action-icon-btn" title="Settings">
+                    <button type="button" className="action-icon-btn" title="Settings">
                         <SettingsIcon />
                     </button>
-                    <button className="action-icon-btn" title="More">
-                        <MoreIcon />
-                    </button>
+                    <div className="project-actions-menu" ref={actionsMenuRef}>
+                        <button
+                            type="button"
+                            className="action-icon-btn"
+                            title="More"
+                            aria-haspopup="menu"
+                            aria-expanded={isActionsOpen}
+                            onClick={toggleActionsMenu}
+                        >
+                            <MoreIcon />
+                        </button>
+                        {isActionsOpen && (
+                            <div className="project-actions-dropdown" role="menu">
+                                <button type="button" className="project-actions-dropdown-item" onClick={handleCreateDbDump} disabled={isDbDumpBusy} role="menuitem">
+                                    <DbDumpIcon />
+                                    <span>{isDbDumpBusy ? 'Creating DB dump...' : 'Create DB dump'}</span>
+                                </button>
+                                {projectDbDumps.length > 0 && (
+                                    <div className="project-actions-dropdown-group">
+                                        <div className="project-actions-dropdown-group-title">Download DB dump</div>
+                                        {projectDbDumps.map((dump) => (
+                                            <button
+                                                key={dump.file_name}
+                                                type="button"
+                                                className="project-actions-dropdown-item"
+                                                onClick={() => handleDownloadDbDump(dump.file_name)}
+                                                role="menuitem"
+                                            >
+                                                <DownloadIcon />
+                                                <span>{dump.file_name}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
             {isExpanded && (
@@ -198,6 +360,36 @@ const ProjectCard = ({ project }) => {
                                         {issue.code ? <div className="issue-code">{issue.code}</div> : null}
                                         <div className="issue-message">{issue.message}</div>
                                         {issue.details ? <div className="issue-details">{issue.details}</div> : null}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
+
+                    {projectDbDumps.length > 0 && (
+                        <div className="project-issue-section db-dump-section">
+                            <h4 className="issue-section-title">
+                                <DbDumpIcon />
+                                DB dumps
+                            </h4>
+                            <ul className="db-dump-list">
+                                {projectDbDumps.map((dump) => (
+                                    <li key={dump.file_name} className="db-dump-list-item">
+                                        <div className="db-dump-list-main">
+                                            <div className="db-dump-file-name">{dump.file_name}</div>
+                                            <div className="db-dump-file-meta">
+                                                {dump.created_at || ''}
+                                                {dump.size ? ` • ${formatFileSize(Number(dump.size))}` : ''}
+                                            </div>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            className="action-icon-btn db-dump-download-btn"
+                                            onClick={() => handleDownloadDbDump(dump.file_name)}
+                                            title="Download dump"
+                                        >
+                                            <DownloadIcon />
+                                        </button>
                                     </li>
                                 ))}
                             </ul>

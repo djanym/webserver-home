@@ -75,6 +75,7 @@ const buildApiError = (payload = null, message = null, status = null) => {
 export const apiRequest = async (apiRoute, data = null, method = 'GET', options = {}) => {
     await initApiConfig();
 
+    const responseType = String(options.responseType || 'json');
     const requestMethod = String(method || 'POST').toUpperCase();
     const requestOptions = {
         method: requestMethod,
@@ -85,11 +86,30 @@ export const apiRequest = async (apiRoute, data = null, method = 'GET', options 
         },
     };
 
+    delete requestOptions.responseType;
+
     if (data !== null && requestMethod !== 'GET') {
         requestOptions.body = JSON.stringify(data);
     }
 
     const response = await fetch(resolveApiUrl(apiRoute), requestOptions);
+
+    if ('blob' === responseType) {
+        if (!response.ok) {
+            let payload = null;
+
+            try {
+                payload = await response.json();
+            } catch (error) {
+                payload = null;
+            }
+
+            throw buildApiError(payload, payload?.message || null, response.status);
+        }
+
+        return response.blob();
+    }
+
     let payload = null;
 
     try {
@@ -98,14 +118,12 @@ export const apiRequest = async (apiRoute, data = null, method = 'GET', options 
         payload = null;
     }
 
-    // Check for HTTP errors or backend-signaled failures in JSON payload.
     const isHttpError = !response.ok;
     const isBackendError = payload && payload.success !== true;
 
     if (isHttpError || isBackendError) {
         throw buildApiError(payload, payload?.message || null, response.status);
     }
-
 
     return payload;
 };

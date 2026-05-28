@@ -14,6 +14,7 @@ include ABSPATH . '/inc/AppError.php';
 include ABSPATH . '/inc/AppShared.php';
 // Modules.
 include ABSPATH . '/modules/projects-manager/projects-manager.php';
+include ABSPATH . '/modules/db-dump-manager/db-dump-manager.php';
 // Default routes.
 include ABSPATH . '/routes.php';
 

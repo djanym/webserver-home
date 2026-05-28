@@ -5,7 +5,7 @@
 import React from 'react';
 import ProjectCard from './ProjectCard';
 
-const ProjectList = ({ projects }) => {
+const ProjectList = ({ projects, onProjectUpdated }) => {
     if (!projects || projects.length === 0) {
         return (
             <div className="empty-state">
@@ -19,7 +19,7 @@ const ProjectList = ({ projects }) => {
             <h2 className="section-title">Projects ({projects.length})</h2>
             <div className="project-rows-container">
                 {projects.map((project) => (
-                    <ProjectCard key={project.slug} project={project} />
+                    <ProjectCard key={project.slug} project={project} onProjectUpdated={onProjectUpdated} />
                 ))}
             </div>
         </div>

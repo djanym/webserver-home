@@ -1,0 +1,3 @@
+[submodule "backend/vendor/djanym/validatorbei"]
+	path = backend/vendor/djanym/validatorbei
+	url = git@github.com:djanym/validatorbei.git

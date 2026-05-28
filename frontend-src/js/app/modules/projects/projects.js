@@ -122,7 +122,7 @@ const ProjectsModule = ({ setHeaderAction }) => {
                 ) : error ? (
                     <div className="error">{error}</div>
                 ) : (
-                    <ProjectList projects={projects} />
+                    <ProjectList projects={projects} onProjectUpdated={handleProjectAdded} />
                 )}
             </section>
         </AppConfigContext.Provider>
