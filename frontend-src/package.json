@@ -2,7 +2,7 @@
     "name": "webserver-home",
     "version": "1.0.0",
     "devDependencies": {
-        "@babel/core": "^7.29.0",
+        "@babel/core": "^7.29.6",
         "@babel/preset-env": "^7.29.2",
         "@babel/preset-react": "^7.28.5",
         "autoprefixer": "^10.4.27",
